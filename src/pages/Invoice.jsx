@@ -433,7 +433,19 @@ export default function InvoicePage({ bookingId }) {
             columns={columns}
             dataSource={filteredRows}
             pagination={{ pageSize: 10 }}
-            locale={{ emptyText: loading ? 'Đang tải…' : 'Chưa có hoá đơn' }}
+            locale={{
+              emptyText: loading
+                ? 'Đang tải…'
+                : (
+                    <div className="cv-emptyState cv-emptyState--compact">
+                      <span className="material-symbols-rounded cv-emptyStateIcon" aria-hidden>
+                        receipt
+                      </span>
+                      <div className="cv-emptyStateTitle">Chưa có hoá đơn</div>
+                      <div className="cv-emptyStateHint">Khi bạn tạo booking và cập nhật hoá đơn, dữ liệu sẽ hiện ở đây.</div>
+                    </div>
+                  )
+            }}
             className="cv-invoiceTable"
             showHeader={!isMobile}
             scroll={isMobile ? undefined : { x: 980 }}

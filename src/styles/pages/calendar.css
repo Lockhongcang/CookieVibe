@@ -545,12 +545,9 @@
 }
 
 .cv-calSideEmpty {
-   color: var(--cv-text-secondary);
-   background: rgba(255, 255, 255, 0.55);
-   border: 1px dashed rgba(0, 0, 0, 0.1);
-   border-radius: 14px;
-   padding: 12px;
-   font-size: 13px;
+   background: transparent;
+   border: none;
+   padding: 0;
 }
 
 .cv-calSideAlerts {
@@ -909,7 +906,13 @@ table.fc-col-header {
 
 @media (max-width: 1900px) {
 
-   /* Mobile: keep selected border, remove watermark image */
+   /* Mobile: remove selected day effect entirely */
+   .cv-calendarPage .fc .cv-day--selected .fc-daygrid-day-frame {
+      border: none !important;
+      background: transparent !important;
+      animation: none !important;
+   }
+
    .cv-calendarPage .fc .cv-day--selected .fc-daygrid-day-frame::after {
       content: none;
       display: none;
@@ -1390,15 +1393,14 @@ table.fc-col-header {
 
 .cv-daySheetItem {
    width: 100%;
+   border: none;
+   text-align: left;
 }
 
 .cv-daySheetEmpty {
-   padding: var(--cv-space-4);
-   border-radius: 16px;
-   background: rgba(255, 255, 255, 0.75);
-   border: 1px solid var(--cv-border-soft);
-   color: var(--cv-text-muted);
-   font-weight: 650;
+   padding: 0;
+   background: transparent;
+   border: none;
 }
 
 /* Left status indicator stripe */

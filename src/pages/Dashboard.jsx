@@ -81,7 +81,7 @@ export default function DashboardPage() {
 	const recentRows = useMemo(() => {
 		const list = Array.isArray(overview?.recentBookings) ? overview.recentBookings : []
 		return list.slice(0, 5)
-	}, [overview?.recentBookings])
+	}, [overview])
 
 	return (
 		<div className="cv-container">
@@ -119,16 +119,64 @@ export default function DashboardPage() {
 						{/* Right / Row 2: Recent orders (max 5-10) */}
 						<section className="cv-dashboardSection">
 							<Card title="Đơn gần đây" loading={loading} className="cv-dashboardCard cv-dashboardCard--solid" bordered={false}>
-								<Table
-									rowKey={(r) => r.id}
-									columns={recentColumns}
-									dataSource={recentRows}
-									pagination={false}
-									size="small"
-									tableLayout="fixed"
-									className="cv-dashboardRecentTable"
-									locale={{ emptyText: loading ? 'Đang tải…' : 'Chưa có dữ liệu' }}
-								/>
+								<div className="cv-dashboardRecentDesktop">
+									<Table
+										rowKey={(r) => r.id}
+										columns={recentColumns}
+										dataSource={recentRows}
+										pagination={false}
+										size="small"
+										tableLayout="fixed"
+										className="cv-dashboardRecentTable"
+										locale={{
+											emptyText: loading
+												? 'Đang tải…'
+												: (
+													<div className="cv-emptyState cv-emptyState--compact">
+														<span className="material-symbols-rounded cv-emptyStateIcon" aria-hidden>
+															receipt_long
+														</span>
+														<div className="cv-emptyStateTitle">Chưa có đơn gần đây</div>
+														<div className="cv-emptyStateHint">Khi có booking mới, danh sách sẽ hiện ở đây.</div>
+													</div>
+												)
+										}}
+									/>
+								</div>
+								<div className="cv-dashboardRecentMobile">
+									{recentRows.length ? (
+										<div className="cv-recentCards">
+											{recentRows.map((b) => (
+												<div key={b.id} className="cv-recentCard">
+													<div className="cv-recentCardRow">
+														<span className="cv-recentCardLabel">Khách hàng</span>
+														<span className="cv-recentCardValue">{b?.customer_name || '(Chưa có tên)'}</span>
+													</div>
+													<div className="cv-recentCardRow">
+														<span className="cv-recentCardLabel">Thời gian</span>
+														<span className="cv-recentCardValue">{formatDateTime(b)}</span>
+													</div>
+													<div className="cv-recentCardRow">
+														<span className="cv-recentCardLabel">Trạng thái</span>
+														{statusTag(b?.status)}
+													</div>
+												</div>
+											))}
+										</div>
+									) : (
+										loading ? (
+											<div className="cv-recentEmpty">Đang tải…</div>
+										) : (
+											<div className="cv-emptyState cv-emptyState--compact">
+												<span className="material-symbols-rounded cv-emptyStateIcon" aria-hidden>
+													receipt_long
+												</span>
+												<div className="cv-emptyStateTitle">Chưa có đơn gần đây</div>
+												<div className="cv-emptyStateHint">Khi có booking mới, danh sách sẽ hiện ở đây.</div>
+											</div>
+										)
+									)}
+								</div>
 							</Card>
 						</section>
 					</div>

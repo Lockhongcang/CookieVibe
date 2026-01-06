@@ -387,7 +387,19 @@ function PackagesPage() {
           pagination={false}
           showHeader={!isMobile}
           scroll={isMobile ? undefined : { x: 'max-content' }}
-          locale={{ emptyText: loading ? 'Đang tải…' : 'Chưa có gói chụp' }}
+          locale={{
+            emptyText: loading
+              ? 'Đang tải…'
+              : (
+                  <div className="cv-emptyState cv-emptyState--compact">
+                    <span className="material-symbols-rounded cv-emptyStateIcon" aria-hidden>
+                      inventory_2
+                    </span>
+                    <div className="cv-emptyStateTitle">Chưa có gói chụp</div>
+                    <div className="cv-emptyStateHint">Bạn có thể bấm nút “+” để thêm gói chụp mới.</div>
+                  </div>
+                )
+          }}
           onRow={
             isMobile
               ? (record) => ({

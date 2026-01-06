@@ -172,7 +172,13 @@ export default function MonthlyRevenueAreaChart({
         <Chart options={options} series={series} type="area" height={260} />
       ) : (
         <div className="cv-dashboardEmpty">
-          <Empty description="Chưa có dữ liệu doanh thu" />
+          <div className="cv-emptyState">
+            <span className="material-symbols-rounded cv-emptyStateIcon" aria-hidden>
+              insert_chart
+            </span>
+            <div className="cv-emptyStateTitle">Chưa có dữ liệu doanh thu</div>
+            <div className="cv-emptyStateHint">Thử chọn tháng/năm khác hoặc kiểm tra xem đã có booking nào trong kỳ này chưa.</div>
+          </div>
         </div>
       )}
     </Card>

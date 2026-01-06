@@ -631,7 +631,6 @@ export default function CalendarPage({ onOpenInvoice }) {
   const canAddBookingInDaySheet = daySheetCounts.bookingCount < 2
   const canAddNoteInDaySheet = daySheetCounts.noteCount < 1
   const showDaySheetActions = canAddBookingInDaySheet || canAddNoteInDaySheet
-  const daySheetActionCount = Number(canAddBookingInDaySheet) + Number(canAddNoteInDaySheet)
 
   const handleOpenDaySheetItem = useCallback(
     (item) => {
@@ -796,7 +795,7 @@ export default function CalendarPage({ onOpenInvoice }) {
                   locale={viLocale}
                   headerToolbar={
                     isMobile
-                      ? { left: 'title', center: 'prev,next', right: 'dayGridMonth,timeGridWeek today' }
+                      ? { left: 'title', center: 'prev,next', right: '' }
                       : { left: 'title prev,next', right: 'today dayGridMonth,timeGridWeek' }
                   }
                   buttonText={{
@@ -1023,7 +1022,15 @@ export default function CalendarPage({ onOpenInvoice }) {
                     </div>
                   ) : (
                     <div className="cv-calSideSectionCard cv-calSideSectionCard--today">
-                      <div className="cv-calSideEmpty">Không có lịch trong ngày này.</div>
+                      <div className="cv-calSideEmpty">
+                        <div className="cv-emptyState cv-emptyState--compact">
+                          <span className="material-symbols-rounded cv-emptyStateIcon" aria-hidden>
+                            event_busy
+                          </span>
+                          <div className="cv-emptyStateTitle">Chưa có lịch trong ngày này</div>
+                          <div className="cv-emptyStateHint">Bạn có quên thêm note không? Hãy bấm “Thêm note” để ghi lại việc cần làm.</div>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1076,7 +1083,15 @@ export default function CalendarPage({ onOpenInvoice }) {
                     </div>
                   ) : (
                     <div className="cv-calSideSectionCard cv-calSideSectionCard--overdue">
-                      <div className="cv-calSideEmpty">Không có lịch quá hạn.</div>
+                      <div className="cv-calSideEmpty">
+                        <div className="cv-emptyState cv-emptyState--compact">
+                          <span className="material-symbols-rounded cv-emptyStateIcon" aria-hidden>
+                            task_alt
+                          </span>
+                          <div className="cv-emptyStateTitle">Không có lịch quá hạn</div>
+                          <div className="cv-emptyStateHint">Mọi lịch đều đang đúng hạn. Nếu cần, bạn có thể thêm note để nhắc việc.</div>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1170,28 +1185,26 @@ export default function CalendarPage({ onOpenInvoice }) {
           {daySheetItems.length ? (
             <div className="cv-daySheetList" role="list">
               {daySheetItems.map((it) => {
-                const startText = it?.start ? dayjs(it.start).format('HH:mm') : ''
-                const endText = it?.end ? dayjs(it.end).format('HH:mm') : ''
-                const timeText = startText ? (endText ? `${startText} - ${endText}` : startText) : ''
+                const isNote = it?.type === 'note'
 
-                const status = (() => {
-                  if (it?.type === 'note') {
-                    const raw = String(it?.raw?.status || 'todo')
-                    return raw === 'completed' ? 'done' : 'todo'
+                const timeText = (() => {
+                  if (isNote) {
+                    const rawDate = it?.raw?.date
+                    const rawTime = it?.raw?.time
+                    if (rawDate && rawTime) return dayjs(`${rawDate}T${rawTime}`).format('HH:mm')
+                    return ''
                   }
 
-                  const rawStatus = String(it?.raw?.status || 'scheduled')
-                  if (rawStatus === 'canceled') return 'canceled'
-                  if (rawStatus === 'completed') return 'done'
-
-                  const missingLocation = !String(it?.raw?.location || '').trim()
-                  const packageHasMakeup = Boolean(it?.raw?.packages?.has_makeup)
-                  const invoice = invoicesByBookingId?.[it?.raw?.id] || null
-                  const missingMakeup = packageHasMakeup && (invoice?.makeup_fee === null || invoice?.makeup_fee === undefined)
-                  return missingLocation || missingMakeup ? 'scheduled' : 'completed'
+                  const startText = it?.start ? dayjs(it.start).format('HH:mm') : ''
+                  const endText = it?.end ? dayjs(it.end).format('HH:mm') : ''
+                  return startText ? (endText ? `${startText} - ${endText}` : startText) : ''
                 })()
 
-                const cls = `cv-daySheetItem cv-calSideItem status-${status}`
+                const status = isNote
+                  ? (String(it?.raw?.status || 'todo') === 'completed' ? 'done' : 'todo')
+                  : getBookingDisplayStatus(it?.raw)
+
+                const cls = `cv-daySheetItem cv-eventRow ${isNote ? 'note' : 'booking'} status-${status}`
 
                 return (
                   <button
@@ -1200,16 +1213,25 @@ export default function CalendarPage({ onOpenInvoice }) {
                     className={cls}
                     onClick={() => handleOpenDaySheetItem(it)}
                     aria-label={`${timeText || ''} ${it.title}`.trim()}
+                    data-cv-type={isNote ? 'note' : 'booking'}
+                    data-cv-status={status}
                   >
-                    <span className={`cv-calSideDot status-${status}`} aria-hidden />
-                    <span className="cv-calSideTime">{timeText || '--:--'}</span>
-                    <span className="cv-calSideText">{it.title}</span>
+                    <span className="cv-eventTime">{timeText || '--:--'}</span>
+                    <span className="cv-eventText">{it.title}</span>
                   </button>
                 )
               })}
             </div>
           ) : (
-            <div className="cv-daySheetEmpty">Không có lịch trong ngày này.</div>
+            <div className="cv-daySheetEmpty">
+              <div className="cv-emptyState cv-emptyState--compact">
+                <span className="material-symbols-rounded cv-emptyStateIcon" aria-hidden>
+                  calendar_clock
+                </span>
+                <div className="cv-emptyStateTitle">Ngày này chưa có gì</div>
+                <div className="cv-emptyStateHint">Bạn có quên thêm note không? Dùng nút “Thêm lịch” hoặc “Thêm note” ở phía trên.</div>
+              </div>
+            </div>
           )}
         </div>
       </Modal>

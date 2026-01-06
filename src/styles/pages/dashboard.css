@@ -425,3 +425,69 @@
 .cv-statusTag--danger.ant-tag { background: var(--cv-danger-soft); color: var(--cv-danger); }
 .cv-statusTag--info.ant-tag { background: var(--cv-info-soft); color: var(--cv-info); }
 .cv-statusTag--muted.ant-tag { background: var(--cv-bg-muted); color: var(--cv-text-secondary); }
+
+/* =============================
+   RESPONSIVE: MOBILE SUMMARY
+============================= */
+
+@media (max-width: 1900px) {
+   .cv-dashboardRecentDesktop {
+      display: none;
+   }
+   .cv-dashboardRecentMobile {
+      display: block;
+   }
+}
+
+@media (min-width: 1901px) {
+   .cv-dashboardRecentDesktop {
+      display: block;
+   }
+   .cv-dashboardRecentMobile {
+      display: none;
+   }
+}
+
+/* Mobile recent orders summary cards */
+.cv-recentCards {
+   display: flex;
+   flex-direction: column;
+   gap: 12px;
+}
+
+.cv-recentCard {
+  background: var(--cv-bg-soft);
+  border: 1px solid var(--cv-border-soft);
+  border-radius: var(--cv-radius-md);
+  padding: var(--cv-space-4);
+   display: flex;
+   flex-direction: column;
+   gap: 8px;
+}
+
+.cv-recentCardRow {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   gap: 12px;
+}
+
+.cv-recentCardLabel {
+  color: var(--cv-text-secondary);
+   font-size: 13px;
+  font-weight: 500;
+}
+
+.cv-recentCardValue {
+  color: var(--cv-text-primary);
+   font-size: 14px;
+  font-weight: 750;
+   text-align: right;
+}
+
+.cv-recentEmpty {
+   padding: 24px;
+   text-align: center;
+  color: var(--cv-text-muted);
+   font-size: 14px;
+}

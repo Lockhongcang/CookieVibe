@@ -61,7 +61,13 @@ export default function TopPackagesDonutChart({ data = [], loading = false }) {
         </div>
       ) : (
         <div className="cv-dashboardEmpty">
-          <Empty description="Chưa có dữ liệu" />
+          <div className="cv-emptyState">
+            <span className="material-symbols-rounded cv-emptyStateIcon" aria-hidden>
+              donut_large
+            </span>
+            <div className="cv-emptyStateTitle">Chưa có dữ liệu</div>
+            <div className="cv-emptyStateHint">Khi có đơn phát sinh, gói bán chạy sẽ hiển thị ở đây.</div>
+          </div>
         </div>
       )}
     </Card>

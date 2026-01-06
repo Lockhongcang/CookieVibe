@@ -1,5 +1,5 @@
 import dayjs from 'dayjs'
-import { Button, DatePicker, Input, Modal, Select, Space, TimePicker, Typography } from 'antd'
+import { Button, DatePicker, Input, Modal, Select, TimePicker, Typography } from 'antd'
 import { useMemo } from 'react'
 import { toast } from 'react-toastify'
 
@@ -89,7 +89,7 @@ export default function NoteModal({
   return (
     <Modal
       open={open}
-      title={title}
+      title={<h1 className="cv-modalH1">{title}</h1>}
       wrapClassName="cv-calendarModal"
       centered
       closeIcon={(
@@ -106,83 +106,124 @@ export default function NoteModal({
       okText={okText}
       confirmLoading={confirmLoading}
       cancelText={readOnly ? 'Đóng' : 'Huỷ'}
-      footer={
-        readOnly
-          ? [
-              <Button key="close" onClick={onCancel}>
+      footer={(
+        <div className="cv-modalFooterGrid">
+          {readOnly ? (
+            <div style={{ gridColumn: 'span 12' }}>
+              <Button onClick={onCancel} block>
                 Đóng
               </Button>
-            ]
-          : undefined
-      }
+            </div>
+          ) : (
+            <>
+              <Button onClick={async () => {
+                const ok = await confirmDiscardIfDirty()
+                if (!ok) return
+                onCancel?.()
+              }} block>
+                Huỷ
+              </Button>
+              <Button type="primary" onClick={handleOk} loading={confirmLoading} block>
+                {okText}
+              </Button>
+            </>
+          )}
+        </div>
+      )}
     >
-      <Space direction="vertical" size={12} style={{ width: '100%' }}>
-        <div className="cv-dateTimeBlock">
-          <div className="cv-dateTimeLabel">Ngày & giờ</div>
-          <DatePicker
-            value={form?.date ? dayjs(form.date) : null}
-            format="dddd, DD/MM/YYYY"
-            allowClear={false}
-            disabled
-            inputReadOnly
-            suffixIcon={(
-              <span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1 }}>
-                calendar_month
-              </span>
-            )}
-            style={{ width: '100%' }}
-          />
-          <div className="cv-timeSingleRow">
-            <TimePicker
-              value={timeStringToDayjs(form?.time)}
-              onChange={(d) => onChangeForm?.((p) => ({ ...p, time: dayjsToTimeString(d) }))}
-              format="HH:mm"
-              allowClear={false}
-              suffixIcon={(
-                <span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1 }}>
-                  schedule
+      <div className="cv-modalGrid12">
+        <div className="cv-col-12">
+          <div className="cv-modalSection">
+            <div className="cv-modalSectionTitle">Ngày & giờ</div>
+
+            <div className="cv-modalGrid12">
+              <div className="cv-col-12">
+                <div className="cv-field">
+                  <div className="cv-fieldLabel">Ngày</div>
+                  <DatePicker
+                    value={form?.date ? dayjs(form.date) : null}
+                    format="dddd, DD/MM/YYYY"
+                    allowClear={false}
+                    disabled
+                    inputReadOnly
+                    suffixIcon={(
+                      <span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1 }}>
+                        calendar_month
+                      </span>
+                    )}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+              </div>
+
+              <div className="cv-col-12">
+                <div className="cv-field">
+                  <div className="cv-fieldLabel">Giờ</div>
+                  <div className="cv-timeSingleRow" style={{ marginTop: 0 }}>
+                    <TimePicker
+                      value={timeStringToDayjs(form?.time)}
+                      onChange={(d) => onChangeForm?.((p) => ({ ...p, time: dayjsToTimeString(d) }))}
+                      format="HH:mm"
+                      allowClear={false}
+                      suffixIcon={(
+                        <span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1 }}>
+                          schedule
+                        </span>
+                      )}
+                      disabled={readOnly}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="cv-col-12">
+          <div className="cv-modalSection">
+            <div className="cv-modalSectionTitle">Trạng thái</div>
+            <div className="cv-field">
+              <div className="cv-fieldLabel">Chọn trạng thái</div>
+              <Select
+                value={form?.status || 'todo'}
+                onChange={(value) => onChangeForm?.((p) => ({ ...p, status: value }))}
+                options={NOTE_STATUS_OPTIONS}
+                disabled={readOnly}
+                suffixIcon={(
+                  <span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1 }}>
+                    expand_more
+                  </span>
+                )}
+                style={{ width: '100%' }}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="cv-col-12">
+          <div className="cv-modalSection">
+            <div className="cv-modalSectionTitle">Nội dung</div>
+            <div className="cv-field">
+              <div className="cv-fieldLabel">Nội dung note</div>
+              <div className="cv-textareaWithIcon">
+                <span className="material-symbols-rounded cv-inputIcon" aria-hidden>
+                  edit_note
                 </span>
-              )}
-              disabled={readOnly}
-              style={{ width: '100%' }}
-            />
+                <Input.TextArea
+                  className="cv-textareaWithLeftIcon"
+                  rows={4}
+                  value={form?.content || ''}
+                  onChange={(e) => onChangeForm?.((p) => ({ ...p, content: e.target.value }))}
+                  placeholder="Nhập ghi chú…"
+                  disabled={readOnly}
+                />
+              </div>
+              <Typography.Text type="secondary">Note sẽ hiển thị trên lịch theo giờ đã chọn.</Typography.Text>
+            </div>
           </div>
         </div>
-
-        <div>
-          <div style={{ fontWeight: 600, marginBottom: 6 }}>Trạng thái</div>
-          <Select
-            value={form?.status || 'todo'}
-            onChange={(value) => onChangeForm?.((p) => ({ ...p, status: value }))}
-            options={NOTE_STATUS_OPTIONS}
-            disabled={readOnly}
-            suffixIcon={(
-              <span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1 }}>
-                expand_more
-              </span>
-            )}
-            style={{ width: '100%' }}
-          />
-        </div>
-
-        <div>
-          <div style={{ fontWeight: 600, marginBottom: 6 }}>Nội dung note</div>
-          <div className="cv-textareaWithIcon">
-            <span className="material-symbols-rounded cv-inputIcon" aria-hidden>
-              edit_note
-            </span>
-            <Input.TextArea
-              className="cv-textareaWithLeftIcon"
-              rows={4}
-              value={form?.content || ''}
-              onChange={(e) => onChangeForm?.((p) => ({ ...p, content: e.target.value }))}
-              placeholder="Nhập ghi chú…"
-              disabled={readOnly}
-            />
-          </div>
-          <Typography.Text type="secondary">Note sẽ hiển thị trên lịch theo giờ đã chọn.</Typography.Text>
-        </div>
-      </Space>
+      </div>
     </Modal>
   )
 }

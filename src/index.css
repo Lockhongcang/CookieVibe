@@ -189,3 +189,48 @@ body {
 .ant-tooltip .ant-tooltip-arrow::before {
    background: var(--cv-primary);
 }
+
+/* =============================
+    EMPTY STATES (GLOBAL)
+============================= */
+
+.cv-emptyState {
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+   justify-content: center;
+   gap: 10px;
+   padding: var(--cv-space-6);
+   text-align: center;
+
+   /* Keep empty states airy/lightweight (no hard box) */
+   background: transparent;
+   border: none;
+   border-radius: 0;
+}
+
+.cv-emptyState--compact {
+   padding: var(--cv-space-5);
+   gap: 8px;
+}
+
+.cv-emptyStateIcon {
+   font-size: 42px;
+   color: var(--cv-text-muted);
+   opacity: 0.6;
+   line-height: 1;
+}
+
+.cv-emptyStateTitle {
+   font-weight: 750;
+   letter-spacing: -0.1px;
+   color: var(--cv-text-secondary);
+}
+
+.cv-emptyStateHint {
+   font-weight: 550;
+   color: var(--cv-text-muted);
+   font-size: 13px;
+   line-height: 1.35;
+   max-width: 36ch;
+}
