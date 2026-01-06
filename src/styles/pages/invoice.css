@@ -1,0 +1,397 @@
+/* Invoice modal tweaks (reuses .cv-calendarModal header/footer grid styles) */
+
+.cv-calendarModal .cv-invoiceFooter {
+  border-top: 1px solid var(--cv-border-default);
+  padding-top: 12px;
+}
+
+@media (max-width: 768px) {
+  .cv-calendarModal .cv-invoiceFooter {
+    border-top: none;
+    padding-top: 0;
+  }
+}
+
+.cv-calendarModal .cv-invoiceFooterSummary {
+  display: grid;
+  gap: 10px;
+  padding: 1rem 0;
+  margin-bottom: 0;
+}
+
+.cv-calendarModal .cv-invoiceFooterRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.cv-calendarModal .cv-invoiceFooterLabel {
+  font-weight: 650;
+  color: var(--cv-text-secondary);
+  margin-bottom: 2px;
+}
+
+.cv-calendarModal .cv-invoiceTotal {
+  font-weight: 900;
+  font-size: 20px;
+  color: var(--cv-primary-900);
+}
+
+.cv-calendarModal .cv-invoiceRemaining {
+  font-weight: 900;
+  font-size: 18px;
+  color: var(--cv-text-secondary);
+}
+
+.cv-calendarModal .cv-invoiceRemaining--due {
+  color: var(--cv-danger);
+}
+
+.cv-calendarModal .cv-invoiceSectionTitle {
+  font-weight: 800;
+  color: var(--cv-primary-900);
+  margin: 0;
+  margin-bottom: 8px;
+}
+
+@media (max-width: 560px) {
+  .cv-calendarModal .cv-invoiceFooterSummary {
+    padding: 1rem 0;
+  }
+}
+
+/* =============================
+   INVOICE – FILTER BAR
+============================= */
+
+.cv-invoiceFilters.ant-space {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.cv-invoiceFilters.ant-space .ant-space-item {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.cv-invoiceFilters .ant-input-search-button,
+.cv-invoiceFilters .ant-input-search-button.ant-btn {
+  height: 32px;
+}
+
+.cv-invoiceFilters .ant-input-search .ant-input-group-addon {
+  vertical-align: middle;
+}
+
+@media (max-width: 560px) {
+  /* Grid layout:
+     - Range: 12 cols
+     - Package: 6 cols
+     - Status: 6 cols
+     - Search: 12 cols
+     - Reset link: 12 cols
+  */
+  .cv-invoiceFilters.ant-space {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .cv-invoiceFilters.ant-space .ant-space-item {
+    min-width: 0;
+    margin: 0 !important;
+  }
+
+  .cv-invoiceFilters.ant-space .ant-space-item:nth-child(1) {
+    grid-column: 1 / -1;
+  }
+
+  .cv-invoiceFilters.ant-space .ant-space-item:nth-child(2) {
+    grid-column: 1 / 7;
+  }
+
+  .cv-invoiceFilters.ant-space .ant-space-item:nth-child(3) {
+    grid-column: 7 / -1;
+  }
+
+  .cv-invoiceFilters.ant-space .ant-space-item:nth-child(4) {
+    grid-column: 1 / -1;
+  }
+
+  .cv-invoiceFilters.ant-space .ant-space-item:nth-child(5) {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: flex-start;
+  }
+
+  .cv-invoiceFilters .ant-picker,
+  .cv-invoiceFilters .ant-select,
+  .cv-invoiceFilters .ant-input-search {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  /* IMPORTANT: don't force the inner Search button to be full width */
+  .cv-invoiceFilters .ant-input-search-button,
+  .cv-invoiceFilters .ant-input-search-button.ant-btn {
+    width: auto !important;
+    min-width: 40px;
+  }
+}
+
+/* =============================
+   INVOICE – STATUS SELECT
+   Goal: Select background/text changes by status class on Select.
+============================= */
+
+.ant-select.cv-statusSelect,
+.ant-select.ant-select-borderless.cv-statusSelect {
+  border-radius: var(--cv-radius-pill);
+}
+
+.ant-select.cv-statusSelect .ant-select-selector,
+.ant-select.ant-select-borderless.cv-statusSelect .ant-select-selector {
+  border-radius: var(--cv-radius-pill) !important;
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+  border: 1px solid var(--cv-border-default) !important;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.ant-select.cv-statusSelect .ant-select-selection-item,
+.ant-select.ant-select-borderless.cv-statusSelect .ant-select-selection-item {
+  font-weight: 750;
+}
+
+.cv-statusOption {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cv-statusOptionIcon {
+  font-size: 18px;
+  line-height: 1;
+  color: currentColor;
+}
+
+.ant-select.cv-statusSelect .ant-select-arrow,
+.ant-select.ant-select-borderless.cv-statusSelect .ant-select-arrow {
+  color: currentColor;
+  opacity: 0.85;
+}
+
+/* Status colors on the Select root (stable selectors) */
+.ant-select.ant-select-borderless.cv-statusSelect.completed {
+  background: var(--cv-success-soft) !important;
+  color: var(--cv-success) !important;
+}
+
+.ant-select.ant-select-borderless.cv-statusSelect.canceled {
+  background: var(--cv-danger-soft) !important;
+  color: var(--cv-danger) !important;
+}
+
+.ant-select.ant-select-borderless.cv-statusSelect.draft {
+  background: var(--cv-bg-soft) !important;
+  color: var(--cv-primary) !important;
+}
+
+/* Keep selector background transparent so the root background shows */
+.ant-select.ant-select-borderless.cv-statusSelect .ant-select-selector {
+  background: transparent !important;
+}
+
+.ant-select-content-value {
+  display: flex;
+  align-items: center;
+}
+
+/* =============================
+   INVOICE – TABLE SUMMARY LAYOUT
+============================= */
+
+.cv-invoiceTable .ant-table-tbody > tr {
+  cursor: pointer;
+}
+
+.cv-invoiceTable .ant-table-tbody > tr:hover > td {
+  background: var(--cv-bg-soft);
+}
+
+.cv-invoiceInfoCell {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.cv-invoiceName,
+.cv-invoicePackage,
+.cv-invoiceDatetime {
+  display: block;
+  line-height: 1.35;
+}
+
+.cv-invoiceName,
+.cv-invoicePackage {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cv-invoiceDatetime {
+  white-space: nowrap;
+}
+
+.cv-invoiceInfoTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.cv-invoiceName,
+.cv-invoicePackage {
+  font-size: var(--cv-body-size, 14px);
+  font-weight: 750;
+  color: var(--cv-text-primary);
+  min-width: 0;
+}
+
+.cv-invoiceName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cv-invoiceDatetime {
+  font-size: var(--cv-sub-size, 12px);
+  font-weight: 650;
+  color: var(--cv-text-secondary);
+}
+
+.cv-invoiceStatusWrap {
+  flex: 0 0 auto;
+}
+
+.cv-invoiceStatusCell {
+  display: inline-flex;
+}
+
+.cv-invoiceMoneyTotal {
+  font-weight: 800;
+  color: var(--cv-text-primary);
+  white-space: nowrap;
+}
+
+.cv-invoiceMoneyRemaining {
+  font-weight: 800;
+  white-space: nowrap;
+  color: var(--cv-success);
+}
+
+.cv-invoiceMoneyRemaining--paid,
+.cv-invoiceMoneyRemaining--due {
+  color: var(--cv-success);
+}
+
+.cv-invoiceCard {
+  display: grid;
+  gap: 10px;
+  padding: 1.2rem;
+  border: 1px solid var(--cv-border-soft);
+  border-radius: var(--cv-radius-lg);
+  background: var(--cv-bg-main);
+}
+
+.cv-invoiceCardTop {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+}
+
+.cv-invoiceCardTopLeft {
+  font-weight: 800;
+  color: var(--cv-text-primary);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cv-invoiceCardTopRight {
+  font-weight: 800;
+  color: var(--cv-text-primary);
+  text-align: right;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cv-invoiceCardRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cv-invoiceCardLabel {
+  font-size: var(--cv-sub-size, 12px);
+  font-weight: 650;
+  color: var(--cv-text-secondary);
+}
+
+.cv-invoiceCardValue {
+  font-weight: 750;
+  color: var(--cv-text-primary);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.cv-invoiceCardDivider {
+  height: 1px;
+  background: var(--cv-border-soft);
+  width: 100%;
+}
+
+.cv-invoiceResetLink.ant-btn-link {
+  padding: 0;
+  height: auto;
+  font-weight: 750;
+  color: var(--cv-text-primary);
+}
+
+.cv-invoiceResetLink.ant-btn-link:hover {
+  color: var(--cv-primary-900);
+}
+
+.cv-invoiceCardRow--status {
+  align-items: center;
+}
+
+.cv-invoiceCardStatus {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 768px) {
+  .cv-invoiceTable .ant-table-tbody > tr > td {
+    padding: 10px 0;
+    border-bottom: none;
+  }
+
+  .cv-invoiceTable .ant-table-tbody > tr {
+    cursor: pointer;
+  }
+
+  .cv-invoiceTable .ant-table-tbody > tr:hover > td {
+    background: transparent;
+  }
+}
+
+@media (max-width: 768px) {
+  .cv-invoiceInfoTop {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

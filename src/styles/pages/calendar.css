@@ -1,0 +1,1559 @@
+/* =============================
+   FULLCALENDAR (SCOPED)
+============================= */
+.cv-calendarPage .fc .fc-toolbar {
+   margin-bottom: 12px;
+   flex-wrap: nowrap;
+}
+
+.cv-calendarPage .fc .fc-toolbar-chunk {
+   display: inline-flex;
+   align-items: center;
+   gap: 10px;
+}
+
+.cv-calendarPage .fc .fc-toolbar-title {
+   margin: 0;
+   font-weight: 800;
+   font-size: clamp(16px, 4.5vw, 28px);
+   letter-spacing: -0.2px;
+   text-transform: capitalize;
+   color: var(--cv-primary-900);
+}
+
+.cv-calendarPage {
+   width: 100%;
+   max-width: 100%;
+   overflow-x: hidden;
+}
+
+/* =============================
+   SPLIT LAYOUT (DESKTOP SaaS)
+============================= */
+.cv-calendarSplit {
+   display: grid;
+   grid-template-columns: repeat(12, minmax(0, 1fr));
+   gap: var(--cv-space-4);
+   align-items: start;
+}
+
+.cv-calendarMain {
+   grid-column: span 9;
+   min-width: 0;
+}
+
+.cv-calendarSide {
+   grid-column: span 3;
+   min-width: 320px;
+   position: sticky;
+   top: 100px;
+   height: fit-content;
+}
+
+.cv-calSideCard {
+   border-radius: 16px;
+   padding: var(--cv-space-4);
+   background: rgba(255, 255, 255, 0.92);
+   border: 1px solid var(--cv-border-soft);
+   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.04);
+
+   /* Allow the panel to scroll without showing a scrollbar */
+   max-height: calc(100vh - 140px);
+   overflow-y: auto;
+   overscroll-behavior: contain;
+   scrollbar-width: none;
+   /* Firefox */
+   -ms-overflow-style: none;
+   /* IE/Edge */
+}
+
+.cv-calSideCard::-webkit-scrollbar {
+   width: 0;
+   height: 0;
+}
+
+@media (max-width: 1900px) {
+   .cv-calendarSplit {
+      grid-template-columns: 1fr;
+      gap: var(--cv-space-3);
+   }
+
+   .cv-calendarMain {
+      grid-column: 1 / -1;
+   }
+
+   .cv-calendarSide {
+      grid-column: 1 / -1;
+      min-width: 0;
+      position: static;
+      top: auto;
+   }
+
+   .cv-calSideCard {
+      max-height: none;
+      overflow: visible;
+   }
+}
+
+.cv-calSideHeader {
+   display: grid;
+   gap: 8px;
+   padding-bottom: var(--cv-space-3);
+   margin-bottom: var(--cv-space-3);
+}
+
+/* Mini day stats */
+.cv-calSideMiniStats {
+   display: grid;
+   grid-template-columns: repeat(3, minmax(0, 1fr));
+   gap: 10px;
+   margin-top: -4px;
+   padding-bottom: var(--cv-space-3);
+   margin-bottom: var(--cv-space-3);
+}
+
+.cv-calMiniStat {
+   border-radius: 14px;
+   padding: 10px 10px;
+   background: rgba(255, 255, 255, 0.88);
+   border: 1px solid rgba(0, 0, 0, 0.04);
+   box-shadow: none;
+}
+
+.cv-calMiniStatTop {
+   display: flex;
+   align-items: baseline;
+   justify-content: space-between;
+   gap: 8px;
+}
+
+.cv-calMiniStatLabel {
+   font-weight: 700;
+   font-size: 12px;
+   letter-spacing: 0.2px;
+   color: var(--cv-text-secondary);
+}
+
+.cv-calMiniStatValue {
+   font-weight: 850;
+   font-size: 16px;
+   color: var(--cv-primary-900);
+}
+
+.cv-calMiniStatHint {
+   margin-top: 2px;
+   font-weight: 600;
+   font-size: 11px;
+   color: var(--cv-text-muted);
+}
+
+.cv-calSideDateContent {
+   display: flex;
+   align-items: center;
+   gap: 12px;
+}
+
+.cv-calSideTodayBadge {
+   color: var(--cv-text-secondary);
+   font-weight: 600;
+}
+
+.cv-calSideDateMain {
+   font-weight: 650;
+   font-size: 42px;
+   line-height: 1;
+   letter-spacing: -0.6px;
+   color: var(--cv-primary-900);
+}
+
+.cv-calSideDateRight {
+   display: flex;
+   flex-direction: column;
+   gap: 2px;
+   padding-top: 2px;
+}
+
+.cv-calSideDateWeekday {
+   font-weight: 600;
+   font-size: 16px;
+   letter-spacing: 0.2px;
+   color: var(--cv-text-secondary);
+   text-transform: capitalize;
+   line-height: 1.1;
+}
+
+.cv-calSideDateMonthYear {
+   font-weight: 600;
+   font-size: 13px;
+   letter-spacing: 0.2px;
+   color: var(--cv-text-muted);
+   text-transform: capitalize;
+   line-height: 1.1;
+}
+
+.cv-calSideDateSub {
+   font-weight: 600;
+   font-size: 13px;
+   letter-spacing: 0.2px;
+   color: var(--cv-text-secondary);
+   text-transform: capitalize;
+}
+
+.cv-calSideDateLine {
+   font-weight: 850;
+   letter-spacing: -0.2px;
+   color: var(--cv-primary-900);
+   font-size: 14px;
+   text-transform: capitalize;
+}
+
+.cv-calSideActions {
+   display: grid;
+   grid-template-columns: 1fr 1fr;
+   gap: 10px;
+   padding-bottom: var(--cv-space-3);
+   border-bottom: 1px solid rgba(0, 0, 0, 0.035);
+   margin-bottom: var(--cv-space-3);
+}
+
+.cv-calSideActionBtn {
+   border-radius: 999px !important;
+   height: 38px;
+   font-weight: 600;
+   box-shadow: none !important;
+}
+
+/* Primary (compact) */
+.cv-calSideActionBtn--primary.ant-btn-primary {
+   box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.06),
+      0 8px 18px rgba(0, 0, 0, 0.08);
+}
+
+/* Secondary (ghost-ish) */
+.cv-calSideActionBtn--secondary.ant-btn {
+   background: rgba(255, 255, 255, 0.55) !important;
+   border: 1px solid var(--cv-border-soft) !important;
+   color: var(--cv-text-secondary) !important;
+}
+
+.cv-calSideActionBtn--secondary.ant-btn:hover {
+   color: var(--cv-text-primary) !important;
+   border-color: var(--cv-border-strong) !important;
+   background: rgba(255, 255, 255, 0.75) !important;
+}
+
+.cv-calSideInvoiceBtn {
+   border-radius: 999px !important;
+   height: 40px;
+   font-weight: 600;
+   background: rgba(255, 255, 255, 0.55) !important;
+   border: 1px solid var(--cv-border-soft) !important;
+   color: var(--cv-text-primary) !important;
+}
+
+.cv-calSideInvoiceBtn:hover {
+   background: rgba(255, 255, 255, 0.75) !important;
+   border-color: var(--cv-border-strong) !important;
+}
+
+.cv-calSideInvoiceBtn--visuallyDisabled {
+   opacity: 0.45;
+   filter: saturate(0.8);
+   pointer-events: none;
+}
+
+.cv-calSideSection {
+   display: grid;
+   gap: 10px;
+   padding-top: var(--cv-space-3);
+}
+
+.cv-calSideSection--upcoming {
+   padding-top: 0;
+}
+
+.cv-calSideSectionTitle {
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   gap: 10px;
+   font-size: 12px;
+   font-weight: 650;
+   letter-spacing: 0.5px;
+   color: var(--cv-text-muted);
+   text-transform: uppercase;
+}
+
+.cv-calSideSectionTitle--focus {
+   color: var(--cv-primary-900);
+}
+
+.cv-calSideSectionTitle--warn {
+   color: var(--cv-warning);
+}
+
+.cv-calSideSectionCard {
+   position: relative;
+   border-radius: 16px;
+   padding: 10px;
+   background: rgba(255, 255, 255, 0.88);
+   border: 1px solid rgba(0, 0, 0, 0.04);
+   box-shadow: none;
+}
+
+.cv-calSideSectionCard--upcoming {
+   padding: 10px 12px;
+}
+
+.cv-calUpcomingRow {
+   display: grid;
+   grid-template-columns: auto 1fr auto;
+   gap: 10px;
+   align-items: center;
+}
+
+.cv-calUpcomingTime {
+   font-weight: 750;
+   font-size: 12px;
+   color: var(--cv-primary-900);
+   padding: 3px 10px;
+   border-radius: 999px;
+   background: var(--cv-bg-main);
+   border: 1px solid var(--cv-border-soft);
+   white-space: nowrap;
+}
+
+.cv-calUpcomingTitle {
+   font-weight: 700;
+   font-size: 13px;
+   color: var(--cv-text-primary);
+   overflow: hidden;
+   text-overflow: ellipsis;
+   white-space: nowrap;
+}
+
+.cv-calUpcomingMeta {
+   font-weight: 650;
+   font-size: 12px;
+   color: var(--cv-text-secondary);
+   white-space: nowrap;
+}
+
+/* Section cards styled like event chips (but larger) */
+.cv-calSideSectionCard--today {
+   border: none;
+   background: linear-gradient(180deg,
+         rgba(250, 248, 243, 0.92) 0%,
+         rgba(255, 255, 255, 0.92) 100%);
+}
+
+.cv-calSideSectionCard--overdue {
+   border: none;
+   background: linear-gradient(180deg,
+         rgba(242, 239, 232, 0.92) 0%,
+         rgba(255, 255, 255, 0.92) 100%);
+}
+
+/* Inside tinted cards, make items resemble event chips */
+.cv-calSideSectionCard--today .cv-calSideItem {
+   border: none;
+   background: rgba(255, 255, 255, 0.72);
+   backdrop-filter: blur(10px);
+   -webkit-backdrop-filter: blur(10px);
+   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.cv-calSideSectionCard--overdue .cv-calSideItem {
+   background: rgba(255, 255, 255, 0.92);
+   border-color: rgba(0, 0, 0, 0.04);
+}
+
+/* In these sections, use stripe as the only status indicator */
+.cv-calSideSectionCard--today .cv-calSideDot,
+.cv-calSideSectionCard--overdue .cv-calSideDot {
+   display: none;
+}
+
+.cv-calSideSectionCard--today .cv-calSideItem,
+.cv-calSideSectionCard--overdue .cv-calSideItem {
+   grid-template-columns: auto 1fr;
+   gap: 10px;
+   padding-left: 14px;
+}
+
+/* Force the active item to follow the section palette */
+.cv-calSideSectionCard--today .cv-calSideItem--active {
+   border: none;
+   background: rgba(255, 255, 255, 0.82) !important;
+}
+
+.cv-calSideSectionCard--today .cv-calSideItem--active::before {
+   background: var(--cv-primary) !important;
+}
+
+.cv-calSideSectionCard--overdue .cv-calSideItem--active {
+   background: rgba(255, 255, 255, 0.96) !important;
+   border-color: rgba(0, 0, 0, 0.08);
+}
+
+.cv-calSideSectionCard--overdue .cv-calSideItem--active::before {
+   background: var(--cv-warning) !important;
+}
+
+.cv-calSideSectionCard--overdue::before {
+   display: none;
+}
+
+.cv-calSideList {
+   display: grid;
+   gap: 8px;
+}
+
+.cv-calSideItem {
+   appearance: none;
+   position: relative;
+   border: 1px solid rgba(0, 0, 0, 0.04);
+   background: rgba(255, 255, 255, 0.90);
+   color: var(--cv-text-primary);
+   border-radius: 14px;
+   padding: 8px 10px 8px 14px;
+   cursor: pointer;
+   text-align: left;
+   display: grid;
+   /* No dots: time + text only */
+   grid-template-columns: auto 1fr;
+   gap: 10px;
+   align-items: center;
+   transition:
+      transform 0.14s ease,
+      background 0.14s ease,
+      border-color 0.14s ease,
+      box-shadow 0.14s ease;
+}
+
+/* Left indicator bar (always visible, like the chip in screenshot) */
+.cv-calSideItem::before {
+   content: '';
+   position: absolute;
+   left: 6px;
+   top: 8px;
+   bottom: 8px;
+   width: 3px;
+   border-radius: 999px;
+   background: var(--cv-border-strong);
+   opacity: 0.9;
+   transition: opacity 0.12s ease, width 0.12s ease;
+}
+
+.cv-calSideItem.status-scheduled::before {
+   background: var(--cv-primary)
+}
+
+.cv-calSideItem.status-completed::before {
+   background: var(--cv-success)
+}
+
+.cv-calSideItem.status-canceled::before {
+   background: var(--cv-danger)
+}
+
+.cv-calSideItem.status-todo::before {
+   background: var(--cv-primary)
+}
+
+.cv-calSideItem.status-done::before {
+   background: var(--cv-text-secondary)
+}
+
+.cv-calSideItem.status-warning::before {
+   background: var(--cv-primary)
+}
+
+.cv-calSideItem:hover {
+   transform: translateY(-1px);
+   border-color: rgba(0, 0, 0, 0.08);
+   box-shadow: 0 6px 14px rgba(0, 0, 0, 0.04);
+   background: rgba(255, 255, 255, 0.96);
+}
+
+.cv-calSideItem:focus-visible {
+   outline: 2px solid var(--cv-primary);
+   outline-offset: 2px;
+}
+
+.cv-calSideItem--active {
+   border-color: rgba(0, 0, 0, 0.1);
+   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.04);
+   background: rgba(255, 255, 255, 0.96);
+}
+
+.cv-calSideItem--active::before {
+   opacity: 1;
+   width: 4px;
+}
+
+/* Keep status indicator on the stripe only (no tinted backgrounds) */
+.cv-calSideItem--active.status-scheduled::before {
+   background: var(--cv-primary)
+}
+
+.cv-calSideItem--active.status-completed::before {
+   background: var(--cv-success)
+}
+
+.cv-calSideItem--active.status-canceled::before {
+   background: var(--cv-danger)
+}
+
+.cv-calSideItem--active.status-todo::before {
+   background: var(--cv-primary)
+}
+
+.cv-calSideItem--active.status-done::before {
+   background: var(--cv-text-secondary)
+}
+
+.cv-calSideItem--active.status-warning::before {
+   background: var(--cv-primary)
+}
+
+/* Dots removed entirely (use left stripe as the only status indicator). */
+.cv-calSideDot {
+   display: none;
+}
+
+.cv-calSideTime {
+   font-weight: 650;
+   font-size: 12px;
+   color: var(--cv-text-primary);
+   white-space: nowrap;
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   padding: 3px 9px;
+   border-radius: 999px;
+   background: var(--cv-bg-main);
+}
+
+.cv-calSideText {
+   font-weight: 600;
+   font-size: 13px;
+   overflow: hidden;
+   text-overflow: ellipsis;
+   white-space: nowrap;
+}
+
+.cv-calSideEmpty {
+   color: var(--cv-text-secondary);
+   background: rgba(255, 255, 255, 0.55);
+   border: 1px dashed rgba(0, 0, 0, 0.1);
+   border-radius: 14px;
+   padding: 12px;
+   font-size: 13px;
+}
+
+.cv-calSideAlerts {
+   display: grid;
+   gap: 8px;
+   background: transparent;
+   border: none;
+   padding: 2px;
+}
+
+/* Make alerts feel inline & lightweight */
+.cv-calAlertProgressRow {
+   padding: 8px 10px;
+   border-radius: 14px;
+   background: rgba(255, 255, 255, 0.45);
+}
+
+.cv-calLegend {
+   display: grid;
+   gap: 10px;
+   background: transparent;
+   border: none;
+   padding: 2px;
+}
+
+.cv-calLegendItem {
+   display: flex;
+   align-items: center;
+   gap: 10px;
+}
+
+.cv-calLegendText {
+   color: var(--cv-text-secondary);
+   font-weight: 600;
+   font-size: 13px;
+}
+
+.cv-calAlertRow {
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   gap: 10px;
+}
+
+.cv-calAlertLabel {
+   color: var(--cv-text-secondary);
+   font-weight: 600;
+   font-size: 13px;
+}
+
+.cv-calCountBadge {
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   min-width: 22px;
+   height: 18px;
+   padding: 0 8px;
+   border-radius: 999px;
+   background: var(--cv-bg-main);
+   border: 1px solid var(--cv-border-soft);
+   color: var(--cv-text-secondary);
+   font-size: 12px;
+   font-weight: 700;
+}
+
+.cv-calSideSectionTitle--focus .cv-calCountBadge {
+   background: var(--cv-primary-100);
+   color: var(--cv-primary-900);
+}
+
+.cv-calSideSectionTitle--warn .cv-calCountBadge {
+   background: var(--cv-warning-soft);
+   color: var(--cv-warning);
+}
+
+/* Status dots (subtle, eco-friendly palette via tokens) */
+.cv-calSideDot.status-scheduled {
+   /* Keep layout slot so time/text don't shift columns */
+   visibility: hidden;
+}
+
+.cv-calSideDot.status-completed {
+   background: var(--cv-success)
+}
+
+.cv-calSideDot.status-done {
+   background: var(--cv-text-secondary)
+}
+
+.cv-calSideDot.status-canceled {
+   background: var(--cv-danger)
+}
+
+.cv-calSideDot.status-todo {
+   background: var(--cv-primary)
+}
+
+.cv-calSideDot.status-warning {
+   background: var(--cv-primary)
+}
+
+/* Alert progress */
+.cv-calAlertProgressRow {
+   display: grid;
+   gap: 6px;
+}
+
+.cv-calAlertProgressTop {
+   display: flex;
+   align-items: baseline;
+   justify-content: space-between;
+}
+
+.cv-calAlertProgress.ant-progress {
+   margin: 0;
+}
+
+.cv-calAlertProgress.ant-progress .ant-progress-outer {
+   padding-inline-end: 0;
+}
+
+.cv-calAlertProgress.ant-progress .ant-progress-inner {
+   background: rgba(0, 0, 0, 0.06);
+}
+
+.cv-calAlertProgress.ant-progress .ant-progress-text {
+   color: var(--cv-text-secondary);
+   font-weight: 650;
+   font-size: 12px;
+}
+
+@media (max-width: 1024px) {
+   .cv-calendarMain {
+      grid-column: span 12;
+   }
+
+   .cv-calendarSide {
+      grid-column: span 12;
+      min-width: 0;
+      position: static;
+   }
+
+   .cv-calSideActions {
+      grid-template-columns: 1fr;
+   }
+}
+
+@media (max-width: 1900px) {
+
+   /* Show the right panel below the calendar on mobile */
+   .cv-calendarSide {
+      display: block;
+   }
+
+   .cv-calSideCard {
+      max-height: none;
+      overflow: visible;
+   }
+}
+
+.cv-calendarPage .fc {
+   width: 100%;
+   max-width: 100%;
+}
+
+.cv-calendarPage .fc .fc-button {
+   background: #eee;
+   border: none;
+   color: var(--cv-text-secondary);
+   border-radius: var(--cv-radius-pill);
+   padding: 6px 14px;
+   font-weight: 600;
+   transition:
+      background-color 0.15s ease,
+      color 0.15s ease,
+      transform 0.1s ease;
+}
+
+.cv-calendarPage .fc .fc-button:hover {
+   color: var(--cv-text-primary-700);
+}
+
+.cv-calendarPage .fc .fc-button.fc-button-active {
+   background: var(--cv-primary);
+   color: var(--cv-text-inverse);
+   border: none;
+   transform: translateY(1px);
+}
+
+/* Make FullCalendar button group look like nav-pills */
+.cv-calendarPage .fc .fc-button-group {
+   display: inline-flex;
+   align-items: center;
+   gap: 4px;
+   padding: 4px;
+   border-radius: var(--cv-radius-pill);
+   /* WHY: Use theme surfaces for a warmer, cohesive look */
+   background: #eee;
+}
+
+.cv-calendarPage .fc .fc-button-group .fc-button {
+   border: none;
+   background: transparent;
+   color: var(--cv-text-secondary);
+   border-radius: var(--cv-radius-pill);
+}
+
+.cv-calendarPage .fc .fc-button-group .fc-button:hover {
+   color: var(--cv-text-primary);
+}
+
+.cv-calendarPage .fc .fc-button-group .fc-button.fc-button-active {
+   background: var(--cv-primary);
+   color: var(--cv-text-inverse);
+}
+
+/* =============================
+   TABLE + GRID
+============================= */
+.cv-calendarPage .fc-scrollgrid {
+   border-radius: 14px;
+   overflow: hidden;
+   border: 1px solid var(--cv-border-default);
+}
+
+table.fc-col-header {
+   width: 100% !important;
+}
+
+.cv-calendarPage th.fc-col-header-cell {
+   background: #eee;
+   border-bottom: 1px solid var(--cv-border-default);
+}
+
+.cv-calendarPage .fc-col-header-cell-cushion {
+   color: #444;
+   padding: 8px 0;
+}
+
+.fc .fc-timegrid-slot-label-cushion {
+   color: #444;
+}
+
+.fc-theme-standard td, .fc-theme-standard th {
+   background: #fff;
+   border: 1px solid #eee
+}
+
+/* =============================
+   DAY CELL (MONTH: SQUARE 1/1 + +N MORE)
+============================= */
+.cv-calendarPage .fc .cv-day--selected .fc-daygrid-day-frame {
+   position: relative;
+   border-radius: 12px;
+
+   /* Border tinh tế hơn */
+   border: 1.5px solid color-mix(in srgb,
+         var(--cv-primary) 45%,
+         var(--cv-border-default));
+
+   /* Highlight nền thay cho shadow */
+   background:
+      linear-gradient(180deg,
+         color-mix(in srgb, var(--cv-primary-100) 55%, transparent) 0%,
+         var(--cv-bg-card) 100%);
+
+   animation: cv-daySelectedPop 260ms cubic-bezier(.2, .8, .2, 1);
+}
+
+
+/* Selected day (desktop contextual panel sync) */
+.cv-calendarPage .fc .cv-day--selected .fc-daygrid-day-frame {
+   position: relative;
+   border: 2px dashed var(--cv-primary-500);
+}
+
+.cv-calendarPage .fc .cv-day--selected .fc-daygrid-day-frame::after {
+   content: '';
+   position: absolute;
+   right: 8px;
+   bottom: 8px;
+   width: 28px;
+   height: 28px;
+
+   background: url('/src/assets/logo.svg') center/contain no-repeat;
+   opacity: 0.7;
+   pointer-events: none;
+   z-index: 99;
+
+   animation: cv-daySelectedMark 260ms ease-out;
+}
+
+@keyframes cv-daySelectedPop {
+   0% {
+      transform: scale(0.96);
+      background-color: var(--cv-bg-muted);
+   }
+
+   60% {
+      transform: scale(1.02);
+      background-color: var(--cv-primary-100);
+   }
+
+   100% {
+      transform: scale(1);
+      background-color: var(--cv-bg-card);
+   }
+}
+
+@keyframes cv-daySelectedMark {
+   from {
+      opacity: 0;
+      transform: translateY(2px) scale(0.95);
+   }
+
+   to {
+      opacity: 0.5;
+      transform: translateY(0) scale(1);
+   }
+}
+
+
+.cv-calendarPage .fc .cv-day--selected .fc-daygrid-day-frame {
+   border-radius: 12px;
+}
+
+/* Selected event ring */
+.cv-calendarPage .fc .fc-event.cv-event--selected .cv-eventRow {
+   transform: translateY(-1px);
+}
+
+.cv-calendarPage .fc-dayGridMonth-view .fc-daygrid-day-frame::before {
+   content: '';
+   display: block;
+   padding-top: 100%;
+}
+
+.cv-calendarPage .fc-dayGridMonth-view .fc-daygrid-day-top {
+   position: absolute;
+   top: 10px;
+   left: 10px;
+   right: 10px;
+}
+
+.cv-calendarPage .fc-dayGridMonth-view .fc-daygrid-day-events {
+   position: absolute;
+   top: 44px;
+   left: 10px;
+   right: 10px;
+   bottom: 10px;
+   overflow: hidden;
+   display: flex;
+   flex-direction: column;
+   gap: 8px;
+}
+
+@media (max-width: 1900px) {
+
+   /* Mobile: keep selected border, remove watermark image */
+   .cv-calendarPage .fc .cv-day--selected .fc-daygrid-day-frame::after {
+      content: none;
+      display: none;
+   }
+
+   .cv-calendarPage .fc-dayGridMonth-view .fc-daygrid-day-frame {
+      padding: 6px;
+   }
+
+   .cv-calendarPage .fc-dayGridMonth-view .fc-daygrid-day-top {
+      top: 6px;
+      left: 6px;
+      right: 6px;
+   }
+
+   .cv-calendarPage .fc-dayGridMonth-view .fc-daygrid-day-events {
+      right: 0;
+      top: 38px;
+      bottom: auto;
+      transform: none;
+      display: flex;
+      flex-direction: row;
+      gap: 4px;
+      align-items: center;
+      justify-content: center;
+      min-height: 8px;
+      overflow: hidden;
+   }
+
+   /* Center day number within the square cell (mobile month) */
+   .cv-calendarPage .fc-dayGridMonth-view .cv-calendarDayHeader {
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      margin-bottom: 0;
+   }
+
+   .cv-calendarPage .fc-dayGridMonth-view .cv-calendarDayNumber {
+      text-align: center;
+      width: 100%;
+   }
+
+   /* Mobile month: dots */
+   .cv-calendarPage .fc-dayGridMonth-view .fc-daygrid-event-harness {
+      margin: 0 !important;
+      width: auto !important;
+   }
+
+   .cv-calendarPage .fc .fc-dayGridMonth-view .fc-daygrid-event {
+      width: 7px;
+      height: 7px;
+      min-width: 7px;
+      max-width: 7px;
+      min-height: 7px;
+      border-radius: 999px;
+      border: none !important;
+      background: var(--cv-border-strong) !important;
+      cursor: pointer;
+      display: block !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      line-height: 0 !important;
+   }
+
+   .cv-calendarPage .fc .fc-dayGridMonth-view .fc-daygrid-event .fc-event-main {
+      padding: 0 !important;
+   }
+
+   /* Mobile month: prevent FullCalendar default text/time from showing */
+   .cv-calendarPage .fc .fc-dayGridMonth-view .fc-daygrid-event .fc-event-time,
+   .cv-calendarPage .fc .fc-dayGridMonth-view .fc-daygrid-event .fc-event-title,
+   .cv-calendarPage .fc .fc-dayGridMonth-view .fc-daygrid-event .fc-event-title-container,
+   .cv-calendarPage .fc .fc-dayGridMonth-view .fc-daygrid-event .fc-event-main-frame {
+      display: none !important;
+   }
+
+   .cv-calendarPage .fc .fc-dayGridMonth-view .fc-daygrid-event.cv-calDot--booking.status-scheduled {
+      background: var(--cv-primary) !important;
+   }
+
+   .cv-calendarPage .fc .fc-dayGridMonth-view .fc-daygrid-event.cv-calDot--booking.status-completed {
+      background: var(--cv-success) !important;
+   }
+
+   .cv-calendarPage .fc .fc-dayGridMonth-view .fc-daygrid-event.cv-calDot--booking.status-done {
+      background: var(--cv-text-secondary) !important;
+   }
+
+   .cv-calendarPage .fc .fc-dayGridMonth-view .fc-daygrid-event.cv-calDot--booking.status-canceled {
+      background: var(--cv-danger) !important;
+   }
+
+   .cv-calendarPage .fc .fc-dayGridMonth-view .fc-daygrid-event.cv-calDot--note.status-todo {
+      background: var(--cv-pink) !important;
+   }
+
+   .cv-calendarPage .fc .fc-dayGridMonth-view .fc-daygrid-event.cv-calDot--note.status-done {
+      background: var(--cv-text-secondary) !important;
+   }
+}
+
+.cv-weekDayHeader {
+   display: grid;
+   justify-items: center;
+   gap: 4px;
+}
+
+.cv-weekDayHeaderTop {
+   font-size: 0.95rem;
+   font-weight: 750;
+   color: var(--cv-primary-900);
+}
+
+.cv-weekDayCircle {
+   width: 30px;
+   height: 30px;
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   border-radius: 999px;
+   font-weight: 750;
+   color: var(--cv-text-secondary);
+}
+
+/* Highlight TODAY only in week view header */
+.cv-calendarPage .fc-timeGridWeek-view .cv-weekDayCircle--today {
+   background: var(--cv-primary);
+   border-color: var(--cv-primary);
+   color: var(--cv-text-inverse);
+}
+
+/* Highlight TODAY only in month view day number */
+.cv-calendarPage .fc-dayGridMonth-view .fc-day-today .cv-calendarDayNumber {
+   color: var(--cv-text-inverse);
+   background: var(--cv-primary);
+   width: 28px;
+   height: 28px;
+   padding: 0;
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   border-radius: 999px;
+}
+
+/* =============================
+   DAY GRID (DATE + +)
+============================= */
+.cv-calendarDayHeader {
+   display: flex;
+   justify-content: space-between;
+   flex-direction: row-reverse;
+   align-items: center;
+   margin-bottom: 6px;
+   width: 100%;
+}
+
+.cv-calendarDayNumber {
+   font-size: 1rem;
+   font-weight: 700;
+   color: var(--cv-text-secondary);
+}
+
+.cv-calendarAddBtn,
+.cv-calendarNoteBtn {
+   background: none;
+   border: none;
+   color: var(--cv-text-muted);
+   cursor: pointer;
+   opacity: 0;
+   padding: 2px;
+   border-radius: 6px;
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   line-height: 1;
+
+   transition:
+      opacity 0.15s ease,
+      color 0.15s ease,
+      transform 0.12s ease,
+      background-color 0.12s ease;
+}
+
+.fc .fc-daygrid-day-number {
+   width: 100%;
+}
+
+/* Hover day → hiện */
+.fc-daygrid-day:hover .cv-calendarAddBtn,
+.fc-daygrid-day:hover .cv-calendarNoteBtn {
+   opacity: 0.6;
+}
+
+/* Hover */
+.fc-daygrid-day:hover .cv-calendarAddBtn:hover,
+.fc-daygrid-day:hover .cv-calendarNoteBtn:hover {
+   transform: scale(1.15);
+   opacity: 1;
+}
+
+/* Active (click) */
+.cv-calendarAddBtn:active,
+.cv-calendarNoteBtn:active {
+   transform: scale(0.95);
+}
+
+/* Focus keyboard */
+.cv-calendarAddBtn:focus-visible,
+.cv-calendarNoteBtn:focus-visible {
+   outline: 2px solid var(--cv-primary);
+}
+
+/* =============================
+   EVENT GRID
+============================= */
+.fc-daygrid-day-events {
+   display: flex;
+   flex-direction: column;
+   gap: 8px;
+   flex: 1;
+}
+
+.fc-daygrid-event {
+   margin: 0 !important;
+}
+
+/* Remove FullCalendar default event background/border so only our chip is visible */
+.cv-calendarPage .fc .fc-daygrid-event,
+.cv-calendarPage .fc .fc-timegrid-event {
+   background: transparent !important;
+   border: none !important;
+}
+
+.cv-calendarPage .fc .fc-event-main {
+   padding: 0rem 0.2rem !important;
+}
+
+/* WEEK (timeGrid): let our event content fill the full time range */
+.cv-calendarPage .fc-timeGridWeek-view .fc-timegrid-event .fc-event-main {
+   height: 100%;
+}
+
+.cv-calendarPage .fc-timeGridWeek-view .cv-eventRow {
+   width: 100%;
+   align-items: flex-start;
+   white-space: normal;
+}
+
+/* WEEK: bookings fill the time range block */
+.cv-calendarPage .fc-timeGridWeek-view .fc-timegrid-event.cv-timeBooking .cv-eventRow {
+   height: 100%;
+}
+
+/* WEEK: notes stay compact (do not visually stretch) */
+.cv-calendarPage .fc-timeGridWeek-view .fc-timegrid-event.cv-timeNote .fc-event-main {
+   height: auto;
+}
+
+.cv-calendarPage .fc-timeGridWeek-view .fc-timegrid-event.cv-timeNote .cv-eventRow {
+   height: auto;
+   align-items: stretch;
+   padding: 6px 8px;
+}
+
+/* WEEK: minimalist grid + labels */
+.cv-calendarPage .fc-timeGridWeek-view .fc-timegrid-axis,
+.cv-calendarPage .fc-timeGridWeek-view .fc-timegrid-slot-label {
+   color: #444;
+   font-weight: 650;
+}
+
+.cv-calendarPage .fc-timeGridWeek-view .fc-timegrid-slot {
+   border-color: var(--cv-border-soft);
+   padding: 0.5rem;
+}
+
+.cv-calendarPage .fc-timeGridWeek-view .fc-timegrid-col {
+   border-color: var(--cv-border-soft);
+}
+
+/* WEEK: make the all-day lane feel like a separate notes area */
+.cv-calendarPage .fc-timeGridWeek-view .fc-timegrid-allday,
+.cv-calendarPage .fc-timeGridWeek-view .fc-timegrid-allday-events {
+   background: var(--cv-bg-soft);
+}
+
+.cv-calendarPage .fc-timeGridWeek-view .fc-timegrid-allday-events {
+   border-bottom: 1px solid var(--cv-border-soft);
+}
+
+
+/* =============================
+   EVENT ROW – 1 LINE
+============================= */
+.cv-eventRow {
+   display: flex;
+   align-items: center;
+   gap: 6px;
+   font-size: clamp(12px, 3.5vw, 14px);
+   line-height: 1.3;
+   padding: 6px 8px;
+   border-radius: 12px;
+   box-sizing: border-box;
+   white-space: nowrap;
+   overflow: hidden;
+   text-overflow: ellipsis;
+   cursor: pointer;
+   position: relative;
+   padding-left: 14px;
+
+   transition:
+      background-color 0.15s ease,
+      transform 0.1s ease;
+}
+
+/* 2-row layout for timeGrid events */
+.cv-eventRow--stacked {
+   flex-direction: column;
+   align-items: stretch;
+   gap: 4px;
+   white-space: normal;
+}
+
+.cv-eventRow--stacked .cv-eventTop {
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   gap: 8px;
+}
+
+.cv-eventRow--stacked .cv-eventTime {
+   /* Time pill like the original chip (matches screenshot) */
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   padding: 2px 8px;
+   border-radius: var(--cv-radius-pill);
+   background: rgba(255, 255, 255, 0.65);
+   opacity: 0.95;
+   font-size: 0.82rem;
+   font-weight: 700;
+}
+
+.cv-eventRow--stacked .cv-eventText {
+   white-space: nowrap;
+   overflow: hidden;
+   text-overflow: ellipsis;
+   font-weight: 650;
+}
+
+/* Make stacked NOTE cards feel cleaner in week view */
+.cv-calendarPage .fc-timeGridWeek-view .cv-eventRow.note.cv-eventRow--stacked {
+   gap: 3px;
+}
+
+.fc .fc-daygrid-day.fc-day-today {
+   background-color: transparent !important;
+}
+
+@media (max-width: 1900px) {
+
+   /* Mobile toolbar: 2 rows (row1 title + prev/next, row2 views + today) */
+   .cv-calendarPage .fc .fc-header-toolbar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      grid-template-rows: auto auto;
+      gap: 10px;
+      align-items: center;
+   }
+
+   .cv-calendarPage .fc .fc-header-toolbar .fc-toolbar-chunk:nth-child(1) {
+      grid-row: 1;
+      grid-column: 1;
+      justify-content: flex-start;
+   }
+
+   .cv-calendarPage .fc .fc-header-toolbar .fc-toolbar-chunk:nth-child(2) {
+      grid-row: 1;
+      grid-column: 2;
+      justify-content: flex-end;
+   }
+
+   .cv-calendarPage .fc .fc-header-toolbar .fc-toolbar-chunk:nth-child(3) {
+      grid-row: 2;
+      grid-column: 1 / -1;
+      width: 100%;
+      justify-content: space-between;
+   }
+
+   .cv-calendarPage .fc .fc-toolbar {
+      flex-wrap: wrap;
+      gap: 10px;
+   }
+
+   .cv-calendarPage .fc .fc-toolbar-chunk {
+      flex-wrap: wrap;
+      gap: 8px;
+   }
+
+   .cv-calendarPage .fc .fc-button {
+      padding: 6px 10px;
+      font-size: clamp(12px, 3.5vw, 13px);
+   }
+
+   /* Make time-grid single column view feel mobile-first */
+   .cv-calendarPage .fc .fc-timegrid-axis,
+   .cv-calendarPage .fc .fc-timegrid-slot-label {
+      font-size: clamp(12px, 3.5vw, 13px);
+      font-weight: 650;
+      color: var(--cv-text-secondary);
+   }
+
+   .cv-calendarPage .fc .fc-timegrid-event .fc-event-main {
+      padding: 0 !important;
+   }
+
+   /* Allow chip content to wrap if needed, avoid overlap */
+   .cv-eventRow {
+      white-space: normal;
+      line-height: 1.25;
+   }
+
+   .cv-calendarPage .fc-dayGridMonth-view .cv-calendarAddBtn,
+   .cv-calendarPage .fc-dayGridMonth-view .cv-calendarNoteBtn {
+      display: none !important;
+   }
+}
+
+/* Day sheet modal (mobile month tap) – simplified right-panel style */
+.cv-daySheetModal .ant-modal-header {
+   display: none;
+}
+
+.cv-daySheetModal .ant-modal-body {
+   padding-top: var(--cv-space-4);
+}
+
+.cv-daySheet {
+   display: grid;
+   gap: var(--cv-space-4);
+}
+
+.cv-daySheetHeader {
+   padding-top: 2px;
+}
+
+.cv-daySheetActions {
+   display: grid;
+   grid-template-columns: 1fr;
+   gap: 10px;
+}
+
+.cv-daySheetActionBtn {
+   min-height: 44px;
+}
+
+.cv-daySheetSectionTitle {
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   gap: 10px;
+   padding-top: var(--cv-space-3);
+   border-top: 1px solid var(--cv-border-default);
+}
+
+.cv-daySheetSectionText {
+   font-weight: 800;
+   letter-spacing: 0.6px;
+   text-transform: uppercase;
+   font-size: 12px;
+   color: var(--cv-text-secondary);
+}
+
+.cv-daySheetList {
+   display: grid;
+   gap: 10px;
+}
+
+.cv-daySheetItem {
+   width: 100%;
+}
+
+.cv-daySheetEmpty {
+   padding: var(--cv-space-4);
+   border-radius: 16px;
+   background: rgba(255, 255, 255, 0.75);
+   border: 1px solid var(--cv-border-soft);
+   color: var(--cv-text-muted);
+   font-weight: 650;
+}
+
+/* Left status indicator stripe */
+.cv-eventRow::before {
+   content: '';
+   position: absolute;
+   left: 6px;
+   top: 6px;
+   bottom: 6px;
+   width: 4px;
+   border-radius: var(--cv-radius-pill);
+   background: var(--cv-border-strong);
+   opacity: 0.9;
+}
+
+/* Booking chip base */
+.cv-eventRow.booking {
+   border: none;
+   font-weight: 600;
+}
+
+/* Hover */
+.cv-eventRow.booking:hover {
+   transform: translateY(-1px);
+}
+
+/* Focus (keyboard / accessibility) */
+.cv-eventRow.booking:focus-visible {
+   outline: 2px solid var(--cv-primary);
+   outline-offset: 2px;
+}
+
+/* Status → soft background + strong text */
+.cv-eventRow.booking.status-scheduled {
+   background: var(--cv-primary-100);
+   color: var(--cv-primary-900);
+}
+
+.cv-eventRow.booking.status-scheduled::before {
+   background: var(--cv-primary);
+}
+
+.cv-eventRow.booking.status-completed {
+   background: var(--cv-success-soft);
+   color: var(--cv-success);
+}
+
+.cv-eventRow.booking.status-completed::before {
+   background: var(--cv-success);
+}
+
+
+/* DONE (finished): secondary + low opacity + strike-through */
+.cv-eventRow.booking.status-done {
+   background: var(--cv-bg-soft);
+   color: var(--cv-text-secondary);
+   opacity: 0.65;
+}
+
+.cv-eventRow.booking.status-done::before {
+   background: var(--cv-text-secondary);
+}
+
+.cv-eventRow.booking.status-done .cv-eventText {
+   text-decoration: line-through;
+   opacity: 0.95;
+}
+
+.cv-eventRow.booking.status-canceled {
+   background: var(--cv-danger-soft);
+   color: var(--cv-danger);
+   opacity: 0.65;
+}
+
+.cv-eventRow.booking.status-canceled::before {
+   background: var(--cv-danger);
+}
+
+.cv-eventRow.booking.status-canceled .cv-eventText {
+   text-decoration: line-through;
+   opacity: 0.95;
+}
+
+.cv-eventRow.booking .cv-eventTime {
+   opacity: 0.95;
+   font-weight: 600;
+}
+
+/* time */
+.cv-eventTime {
+   /* WHY: A compact time “pill” improves scanability vs. plain text */
+   font-size: 0.82rem;
+   font-weight: 700;
+   letter-spacing: 0.2px;
+   opacity: 0.95;
+   padding: 2px 8px;
+   border-radius: var(--cv-radius-pill);
+   background: rgba(255, 255, 255, 0.65);
+   flex: 0 0 auto;
+}
+
+/* text */
+.cv-eventText {
+   overflow: hidden;
+   text-overflow: ellipsis;
+   /* WHY: Client/name should read as the primary label */
+   font-weight: 650;
+}
+
+/* NOTE */
+.cv-eventRow.note {
+   background: var(--cv-pink-soft);
+   color: var(--cv-pink);
+   border: none;
+   font-weight: 600;
+}
+
+.cv-eventRow.note::before {
+   background: var(--cv-pink);
+}
+
+
+/* DONE (finished note): secondary + low opacity + strike-through */
+.cv-eventRow.note.status-done {
+   background: var(--cv-bg-soft);
+   color: var(--cv-text-secondary);
+   opacity: 0.65;
+}
+
+.cv-eventRow.note.status-done::before {
+   background: var(--cv-text-secondary);
+}
+
+.cv-eventRow.note.status-done .cv-eventText {
+   text-decoration: line-through;
+   opacity: 0.95;
+}
+
+/* Back-compat: if a note still carries status-completed class */
+.cv-eventRow.note.status-completed {
+   background: var(--cv-bg-soft);
+   color: var(--cv-text-secondary);
+   opacity: 0.65;
+}
+
+.cv-eventRow.note.status-completed::before {
+   background: var(--cv-text-secondary);
+}
+
+.cv-eventRow.note.status-completed .cv-eventText {
+   text-decoration: line-through;
+   opacity: 0.95;
+}
+
+.cv-eventRow.note:hover {
+   /* WHY: Notes feel clickable, but keep the palette soft */
+   transform: translateY(-1px);
+}

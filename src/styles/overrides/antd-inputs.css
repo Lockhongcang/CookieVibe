@@ -1,0 +1,289 @@
+
+
+/* =============================
+   FORM LABEL
+============================= */
+.ant-form-item {
+   margin-bottom: 16px;
+}
+
+.ant-form-item-label {
+   padding-bottom: 4px;
+}
+
+.ant-form-item-label>label {
+   font-size: 13px;
+   font-weight: 500;
+   color: #6b4f3f;
+   /* nâu nhạt CookieVibe */
+}
+
+/* =============================
+   CORE INPUT SURFACE
+============================= */
+:where(.ant-input,
+   .ant-input-affix-wrapper,
+   .ant-input-number,
+   .ant-picker,
+   .ant-select .ant-select-selector,
+   .ant-select .ant-select-outlined) {
+   height: 40px;
+   min-height: 40px;
+
+   padding-inline: 12px;
+
+   display: flex;
+   align-items: center;
+
+   background: var(--cv-bg-main);
+   border: 1px solid var(--cv-border-default);
+   border-radius: var(--cv-radius-md);
+
+   color: var(--cv-text-primary);
+   font-size: 14px;
+
+   transition:
+      border-color 0.18s ease,
+      box-shadow 0.18s ease,
+      background-color 0.18s ease;
+}
+
+/* Remove double border inside affix */
+:where(.ant-input-affix-wrapper) .ant-input {
+   border: 0;
+   box-shadow: none;
+   background: transparent;
+   padding: 0;
+}
+
+/* =============================
+   PLACEHOLDER & ICONS
+============================= */
+:where(.ant-input::placeholder,
+   .ant-picker-input > input::placeholder,
+   .ant-select-selection-placeholder) {
+   color: var(--cv-text-muted);
+   opacity: 0.85;
+}
+
+:where(.ant-input-prefix,
+   .ant-input-suffix,
+   .ant-select-arrow,
+   .ant-picker-suffix,
+   .ant-picker-clear) {
+   display: flex;
+   align-items: center;
+   color: var(--cv-text-muted);
+   transition: color 0.15s ease;
+}
+
+/* =============================
+   INPUT / PICKER INNER TEXT
+============================= */
+:where(.ant-input,
+   .ant-input-affix-wrapper .ant-input,
+   .ant-picker-input > input) {
+   font-size: 14px;
+}
+
+/* Picker inner input fix */
+:where(.ant-picker-input > input) {
+   height: 38px;
+   line-height: 38px;
+}
+
+/* =============================
+   HOVER
+============================= */
+:where(.ant-input:hover,
+   .ant-input-affix-wrapper:hover,
+   .ant-input-number:hover,
+   .ant-picker:hover,
+   .ant-select:not(.ant-select-disabled):hover .ant-select-selector) {
+   border-color: var(--cv-border-strong);
+   background: var(--cv-bg-main);
+}
+
+/* =============================
+   FOCUS (SOFT RING)
+============================= */
+:where(.ant-input:focus,
+   .ant-input-affix-wrapper-focused,
+   .ant-input-number-focused,
+   .ant-picker-focused,
+   .ant-select-focused .ant-select-selector) {
+   border-color: var(--cv-border-strong);
+   box-shadow: 0 0 0 3px var(--cv-border-soft);
+   background: var(--cv-bg-main);
+}
+
+/* =============================
+   DISABLED
+============================= */
+:where(.ant-input[disabled],
+   .ant-input-disabled,
+   .ant-input-affix-wrapper-disabled,
+   .ant-input-number-disabled,
+   .ant-picker-disabled,
+   .ant-select-disabled .ant-select-selector) {
+   background: var(--cv-bg-muted);
+   border-color: var(--cv-border-soft);
+   color: var(--cv-text-secondary);
+   cursor: not-allowed;
+}
+
+:where(.ant-picker-disabled input[disabled]) {
+   -webkit-text-fill-color: var(--cv-text-secondary);
+   opacity: 1;
+}
+
+/* =============================
+   SELECT SPECIFIC
+============================= */
+:where(.ant-select .ant-select-selector) {
+   padding: 0 12px !important;
+}
+
+:where(.ant-select-selection-item,
+   .ant-select-selection-placeholder) {
+   line-height: 38px;
+}
+
+/* =============================
+   INPUT NUMBER
+============================= */
+:where(.ant-input-number) {
+   width: 100%;
+}
+
+:where(.ant-input-number-input) {
+   height: 38px;
+   padding: 0 12px;
+}
+
+/* =============================
+   TEXTAREA (NO FLEX)
+============================= */
+.ant-input-textarea {
+   display: block;
+}
+
+:where(.ant-input-textarea textarea.ant-input) {
+   min-height: 80px;
+   padding: 8px 12px;
+
+   background: var(--cv-bg-main);
+   border: 1px solid var(--cv-border-default);
+   border-radius: var(--cv-radius-md);
+
+   font-size: 14px;
+   line-height: 1.5;
+
+   transition:
+      border-color 0.18s ease,
+      box-shadow 0.18s ease;
+}
+
+:where(.ant-input-textarea textarea.ant-input:hover) {
+   border-color: var(--cv-border-strong);
+}
+
+:where(.ant-input-textarea textarea.ant-input:focus) {
+   border-color: var(--cv-border-strong);
+   box-shadow: 0 0 0 3px var(--cv-border-soft);
+}
+
+/* =============================
+   DROPDOWN SURFACES
+============================= */
+:where(.ant-select-dropdown,
+   .ant-picker-dropdown .ant-picker-panel-container) {
+   background: var(--cv-bg-main);
+   border: 1px solid var(--cv-border-default);
+   border-radius: var(--cv-radius-lg);
+
+   box-shadow:
+      0 10px 30px rgba(0, 0, 0, 0.06),
+      0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* Select options */
+:where(.ant-select-item-option-content) {
+   color: var(--cv-text-primary);
+}
+
+:where(.ant-select-item-option-active:not(.ant-select-item-option-disabled)) {
+   background: var(--cv-bg-soft);
+}
+
+:where(.ant-select-item-option-selected:not(.ant-select-item-option-disabled)) {
+   background: var(--cv-bg-muted);
+}
+
+/* =============================
+   MULTI SELECT TAG
+============================= */
+:where(.ant-select-multiple .ant-select-selection-item) {
+   background: var(--cv-bg-soft);
+   border-radius: var(--cv-radius-sm);
+   color: var(--cv-text-primary);
+}
+
+/* =============================
+   GRID & SWITCH ALIGN
+============================= */
+.cv-form-grid {
+   display: grid;
+   grid-template-columns: 1fr 1fr;
+   gap: 12px 16px;
+}
+
+.ant-switch {
+   margin-top: 4px;
+}
+
+.cv-inline-switch {
+   display: flex;
+   align-items: center;
+   gap: 8px;
+}
+
+/* ===== SELECT FULL ALIGN FIX ===== */
+.ant-select {
+   width: 100%;
+}
+
+.ant-select .ant-select-selector {
+   height: 40px !important;
+   min-height: 40px !important;
+
+   display: flex;
+   align-items: center;
+
+   padding: 0 12px !important;
+}
+
+.ant-select-selection-item,
+.ant-select-selection-placeholder {
+   display: flex;
+   align-items: center;
+   line-height: 38px;
+   font-size: 14px;
+}
+
+/* Arrow center */
+.ant-select-arrow {
+   top: 50% !important;
+   transform: translateY(-50%);
+}
+
+.ant-select.ant-select-outlined.css-var-_r_0_.ant-select-css-var.css-dev-only-do-not-override-1uga22k.ant-select-single.ant-select-show-arrow,
+textarea.ant-input.css-dev-only-do-not-override-1uga22k.ant-input-outlined.css-var-root.ant-input-css-var,
+.ant-picker.ant-picker-outlined.css-dev-only-do-not-override-1uga22k.css-var-root.ant-picker-css-var {
+   border-radius: 14px;
+   padding: 0.5rem 1rem;
+}
+
+button.ant-btn.css-dev-only-do-not-override-1uga22k.css-var-_r_0_.ant-btn-default.ant-btn-color-default.ant-btn-variant-outlined.ant-btn-icon-only.ant-btn-compact-item.ant-btn-compact-last-item.ant-input-search-btn {
+   padding: 1.2rem;
+}

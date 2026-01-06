@@ -1,0 +1,427 @@
+/*
+  CookieVibe Dashboard – Color Roles
+  - Brand/Primary: used only for main KPI highlight + key accents.
+  - Neutrals: default for surfaces + text to reduce color noise.
+  - Status colors: ONLY for status indicators (trend %, badges).
+*/
+
+.cv-dashboard {
+  width: 100%;
+  font-size: var(--cv-text-md);
+  /* Safety net: dashboard should never create page-level horizontal scroll. */
+  overflow-x: hidden;
+}
+
+.cv-dashboardHeader {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.cv-dashboardHeader .ant-typography {
+  margin: 0;
+}
+
+/* Page title: neutral, calm (no accent color). */
+.cv-dashboardHeader .ant-typography-title {
+  font-size: var(--cv-title-page) !important;
+  font-weight: 600 !important;
+  line-height: var(--cv-line-height-tight);
+  color: var(--cv-text-primary);
+}
+
+/* Dashboard main layout: 2 columns (~8-4) */
+.cv-dashboardGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: var(--cv-space-5);
+  align-items: start;
+  min-width: 0;
+}
+
+/* Critical for CSS grid/flex overflow: allow children to shrink. */
+.cv-dashboardGrid > *,
+.cv-dashboardCol,
+.cv-dashboardSection,
+.cv-dashboardCard.ant-card {
+  min-width: 0;
+}
+
+@media (max-width: 992px) {
+  .cv-dashboardGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Spacing between stacked cards inside each column */
+.cv-dashboardCol {
+  display: grid;
+  gap: var(--cv-space-5);
+  min-width: 0;
+}
+
+/*
+  DASHBOARD SURFACES
+  - Glass is limited to KPI + chart cards to keep the UI calm.
+  - Tables/lists stay solid for readability.
+*/
+.cv-dashboardCard.ant-card {
+  background: var(--cv-bg-card);
+  border-radius: var(--cv-radius-lg);
+  border: none !important;
+  transition: all 200ms ease-out;
+  max-width: 100%;
+}
+
+.cv-dashboardCard.ant-card.ant-card-bordered {
+  border: none !important;
+}
+
+.cv-dashboardCard.ant-card .ant-card-body {
+  padding: var(--cv-space-4);
+  min-width: 0;
+}
+
+.cv-dashboardCard.ant-card .ant-card-head {
+  border-bottom: none;
+}
+
+.cv-dashboardCard.ant-card .ant-card-head-title {
+  /* Section title hierarchy (neutral text) */
+  font-size: var(--cv-title-section);
+  font-weight: 600;
+  color: var(--cv-text-primary);
+}
+
+/* Glassmorphism (light + controlled) — only when explicitly opted-in via class */
+.cv-dashboardCard--glass.ant-card {
+  background: var(--cv-bg-card);
+  border: 1px solid var(--cv-border-soft) !important;
+}
+
+@supports ((backdrop-filter: blur(12px)) or (-webkit-backdrop-filter: blur(12px))) {
+  .cv-dashboardCard--glass.ant-card {
+    /* Why glass is limited: avoids “frosted page” look, keeps focus on content. */
+    background: rgba(255, 255, 255, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    backdrop-filter: blur(12px) saturate(140%);
+    box-shadow: var(--cv-shadow-md) !important;
+  }
+}
+
+/* Micro-interactions: premium, not flashy */
+.cv-dashboardCard--glass.ant-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Tables/lists must stay solid — no blur, no gradient */
+.cv-dashboardCard--solid.ant-card {
+  background: var(--cv-bg-card);
+  border: none !important;
+}
+
+.cv-dashboardSection {
+  width: 100%;
+}
+
+/* Shared empty state spacing (token-only). */
+.cv-dashboardEmpty {
+  padding-block: var(--cv-space-5);
+}
+
+/* =============================
+   KPI CARDS – COLOR + HEIGHT RULES
+============================= */
+
+.cv-kpiCard.ant-card {
+  border-radius: var(--cv-radius-lg);
+  height: 100%;
+}
+
+/*
+  Height consistency:
+  - Inner layout is 3 zones (head / mid / foot)
+  - Foot reserves space so captions never change card height
+*/
+.cv-kpiInner {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  gap: var(--cv-space-2);
+}
+
+.cv-kpiHead {
+  display: grid;
+  gap: var(--cv-space-2);
+}
+
+.cv-kpiMid {
+  display: flex;
+  align-items: center;
+}
+
+.cv-kpiFoot {
+  min-height: var(--cv-space-4);
+  display: flex;
+  align-items: flex-end;
+}
+
+.cv-kpiTopRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cv-space-3);
+}
+
+/* Default icon role: neutral */
+.cv-kpiIcon {
+  width: var(--cv-space-6);
+  height: var(--cv-space-6);
+  border-radius: var(--cv-radius-md);
+  border: none;
+  background: var(--cv-bg-muted);
+  color: var(--cv-text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.cv-kpiIcon .material-symbols-rounded {
+  font-size: var(--cv-font-size-lg);
+}
+
+/* Secondary KPI icon: highlight role (primary-500) */
+.cv-kpiCard--secondary .cv-kpiIcon {
+  color: var(--cv-primary-500);
+}
+
+/* Main KPI (brand highlight): subtle primary gradient (ONLY here). */
+.cv-kpiCard--primary.cv-dashboardCard.ant-card {
+  background: linear-gradient(135deg, var(--cv-primary-700), var(--cv-primary-500));
+}
+
+.cv-kpiCard--primary .cv-kpiTitle,
+.cv-kpiCard--primary .cv-kpiValue,
+.cv-kpiCard--primary .cv-kpiCaption {
+  color: var(--cv-text-inverse);
+}
+
+.cv-kpiCard--primary .cv-kpiCaption {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* Main KPI icon: off-white accent (80% opacity) */
+.cv-kpiCard--primary .cv-kpiIcon {
+  background: rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.cv-kpiTitle {
+  font-size: var(--cv-font-size-sm);
+  font-weight: 500;
+  color: var(--cv-text-secondary);
+}
+
+.cv-kpiValue {
+  font-size: var(--cv-font-size-lg);
+  font-weight: 700;
+  color: var(--cv-text-primary);
+}
+
+.cv-kpiValue--primary {
+  font-size: var(--cv-title-kpi);
+}
+
+.cv-kpiCaption {
+  font-size: var(--cv-font-size-xs);
+  font-weight: 500;
+  color: var(--cv-text-muted);
+}
+
+/* Trend %: neutral chip, status color only on the number */
+.cv-kpiBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px var(--cv-space-2);
+  border-radius: var(--cv-radius-pill);
+  font-weight: 700;
+  font-size: var(--cv-font-size-xs);
+  line-height: 18px;
+  white-space: nowrap;
+  flex: 0 0 auto;
+  background: var(--cv-bg-muted);
+  border: 1px solid var(--cv-border-soft);
+}
+
+.cv-kpiBadge--up {
+  color: var(--cv-success);
+}
+
+.cv-kpiBadge--down {
+  color: var(--cv-danger);
+} 
+
+/* KPI grid: equal-height cards */
+.cv-kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: stretch;
+  gap: var(--cv-space-4);
+}
+
+@media (max-width: 1200px) {
+  .cv-kpiGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* =============================
+   CHART CONTROLS
+============================= */
+
+.cv-dashboardChartControls {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  max-width: 100%;
+}
+
+@media (max-width: 576px) {
+  .cv-dashboardChartControls {
+    justify-content: flex-start;
+  }
+}
+
+.cv-dashboardChartSelect.ant-select .ant-select-selector {
+  border-radius: var(--cv-radius-pill) !important;
+  border: 1px solid var(--cv-border-soft) !important;
+  background: var(--cv-bg-card) !important;
+}
+
+/* Charts: ensure Apex canvas/SVG never overflows its card. */
+.cv-dashboardChartCard .apexcharts-canvas,
+.cv-dashboardChartCard .apexcharts-svg {
+  max-width: 100% !important;
+}
+
+.cv-dashboardChartCard {
+  overflow: hidden;
+}
+
+/* =============================
+   LIST: TOP PACKAGES (SOLID)
+============================= */
+
+.cv-packagesTotal {
+  color: var(--cv-text-secondary);
+  font-weight: 650;
+  font-size: var(--cv-font-size-xs);
+}
+
+.cv-packagesList {
+  display: grid;
+  gap: var(--cv-space-3);
+}
+
+.cv-packagesRowTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--cv-space-2);
+}
+
+.cv-packagesName {
+  font-weight: 750;
+  color: var(--cv-text-primary);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cv-packagesValue {
+  font-weight: 750;
+  color: var(--cv-text-secondary);
+  white-space: nowrap;
+  font-size: var(--cv-font-size-xs);
+}
+
+.cv-packagesBar {
+  height: 6px;
+  border-radius: 999px;
+  /* Role: muted separator surface */
+  background: var(--cv-bg-muted);
+  overflow: hidden;
+  margin-top: var(--cv-space-2);
+}
+
+.cv-packagesBarFill {
+  height: 100%;
+  /* Role: primary accent used for progress */
+  background: var(--cv-primary-700);
+  border-radius: 999px;
+}
+
+/* =============================
+   TABLE: RECENT ORDERS (SOLID)
+============================= */
+
+.cv-dashboardRecentTable .ant-table,
+.cv-dashboardRecentTable .ant-table-container {
+  background: transparent;
+  max-width: 100%;
+}
+
+.cv-dashboardRecentTable .ant-table-container {
+  overflow-x: hidden;
+}
+
+.cv-dashboardRecentTable .ant-table {
+  width: 100%;
+}
+
+/* Allow content to shrink/ellipsis in fixed-layout table (prevents horizontal scroll). */
+.cv-dashboardRecentTable .ant-table-cell {
+  min-width: 0;
+}
+
+/* Keep status chip on one line; allow other columns to truncate. */
+.cv-dashboardRecentTable td:last-child,
+.cv-dashboardRecentTable th:last-child {
+  white-space: nowrap;
+}
+
+.cv-dashboardRecentTable .ant-table-thead > tr > th {
+  background: var(--cv-bg-muted);
+  color: var(--cv-text-secondary);
+  font-weight: 600;
+  border-bottom: 1px solid var(--cv-border-soft);
+}
+
+.cv-dashboardRecentTable .ant-table-tbody > tr > td {
+  border-bottom: 1px solid var(--cv-border-soft);
+  padding-block: var(--cv-space-3) !important;
+}
+
+.cv-dashboardRecentTable .ant-table-tbody > tr:hover > td {
+  background: var(--cv-bg-soft);
+}
+
+/* Status tags: status colors are allowed ONLY here */
+.cv-statusTag.ant-tag {
+  border: none;
+  border-radius: 999px;
+  padding: var(--cv-space-1) var(--cv-space-2);
+  font-weight: 600;
+}
+
+.cv-statusTag--success.ant-tag { background: var(--cv-success-soft); color: var(--cv-success); }
+.cv-statusTag--danger.ant-tag { background: var(--cv-danger-soft); color: var(--cv-danger); }
+.cv-statusTag--info.ant-tag { background: var(--cv-info-soft); color: var(--cv-info); }
+.cv-statusTag--muted.ant-tag { background: var(--cv-bg-muted); color: var(--cv-text-secondary); }

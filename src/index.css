@@ -1,0 +1,191 @@
+:root {
+   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial,
+      sans-serif;
+   line-height: 1.5;
+   font-weight: 400;
+
+   /* Mobile-first typography (used by page CSS) */
+   --cv-title-size: clamp(16px, 4vw, 18px);
+   --cv-body-size: clamp(13px, 3.5vw, 14px);
+   --cv-sub-size: clamp(12px, 3vw, 13px);
+
+   /* =============================
+     PRIMARY (WARM BROWN – MODERN)
+  ============================= */
+   --cv-primary-900: #3A2312;
+   --cv-primary-700: #5B3A1F;
+   --cv-primary-500: #7A5230;
+   --cv-primary-300: #B08A62;
+   --cv-primary-100: #EFE4D8;
+
+   /* =============================
+   BACKGROUND (NEUTRAL, MODERN)
+============================= */
+   --cv-bg-main: #F9F9F9;
+   --cv-bg-soft: #F7F7F7;
+   --cv-bg-muted: #EEEEEE;
+   --cv-bg-inverse: #1F1C18;
+
+
+   /* =============================
+     TEXT (CLEAR HIERARCHY)
+  ============================= */
+   --cv-text-primary: #2A1F16;
+   --cv-text-secondary: #6F6256;
+   --cv-text-muted: #9A8F83;
+   --cv-text-inverse: #FFFFFF;
+
+   /* =============================
+     STATUS COLORS (SOFT, NOT LOUD)
+  ============================= */
+   --cv-success: #4E9F3D;
+   --cv-success-soft: #EDF7ED;
+
+   --cv-warning: #C78F00;
+   --cv-warning-soft: #FFF7E6;
+
+   --cv-danger: #E24A3B;
+   --cv-danger-soft: #FDECEC;
+
+   --cv-info: #4A90E2;
+   --cv-info-soft: #EEF4FB;
+
+   --cv-pink: #E91E63;
+   --cv-info-soft: #EEF4FB;
+   --cv-pink-soft: #FCEEF3;
+
+   /* =============================
+   BORDERS (NEUTRAL GRAY)
+============================= */
+   --cv-border-strong: #DDDDDD;
+   --cv-border-default: #EEEEEE;
+   --cv-border-soft: #F2F2F2;
+
+   /* =============================
+     RADIUS
+  ============================= */
+   --cv-radius-xs: 4px;
+   --cv-radius-sm: 8px;
+   --cv-radius-md: 12px;
+   --cv-radius-lg: 18px;
+   --cv-radius-xl: 24px;
+   --cv-radius-pill: 999px;
+
+   /* =============================
+     SHADOW (NONE – CLEAN UI)
+  ============================= */
+   /* Shadows are used sparingly for premium hover + glass cards (dashboard only). */
+   --cv-shadow-sm: 0 6px 18px rgba(0, 0, 0, 0.06);
+   --cv-shadow-md: 0 12px 32px rgba(0, 0, 0, 0.08);
+   --cv-shadow-lg: 0 18px 48px rgba(0, 0, 0, 0.10);
+
+   /* =============================
+     SPACING
+  ============================= */
+   --cv-space-1: 4px;
+   --cv-space-2: 8px;
+   --cv-space-3: 12px;
+   --cv-space-4: 16px;
+   --cv-space-5: 24px;
+   --cv-space-6: 32px;
+   --cv-space-7: 48px;
+   --cv-space-8: 64px;
+
+   --cv-font-size-xs: 12px;
+   --cv-font-size-sm: 14px;
+   --cv-font-size-md: 16px;
+   --cv-font-size-lg: 20px;
+   --cv-font-size-xl: 28px;
+
+   --cv-line-height-tight: 1.2;
+   --cv-line-height-normal: 1.5;
+   --cv-line-height-loose: 1.75;
+
+   /* =============================
+     APP ALIASES
+  ============================= */
+   --cv-primary: var(--cv-primary-700);
+   --cv-icon-color: var(--cv-text-secondary);
+   --cv-shell-padding: var(--cv-space-4);
+
+   /* =============================
+       DASHBOARD TYPO ALIASES
+       Why: keep a consistent hierarchy without inventing new sizes.
+    ============================= */
+   --cv-title-page: var(--cv-font-size-lg);
+   --cv-title-section: var(--cv-font-size-md);
+   --cv-title-kpi: var(--cv-font-size-xl);
+   --cv-text-md: var(--cv-font-size-md);
+
+   /* =============================
+       SURFACE ALIASES
+    ============================= */
+   --cv-bg-card: #fff;
+
+   font-synthesis: none;
+   text-rendering: optimizeLegibility;
+   -webkit-font-smoothing: antialiased;
+   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Remove all box-shadows across the app (including Ant Design defaults). */
+*,
+*::before,
+*::after {
+   box-shadow: none !important;
+}
+
+body {
+   margin: 0;
+   min-width: 320px;
+   min-height: 100vh;
+   background: var(--cv-bg-main);
+   color: var(--cv-text-primary);
+   font-size: var(--cv-body-size);
+}
+
+#root {
+   min-height: 100vh;
+}
+
+.material-symbols-rounded {
+   font-variation-settings:
+      'FILL'0,
+      'wght'500,
+      'GRAD'0,
+      'opsz'24;
+   line-height: 1;
+}
+
+@media (max-width: 768px) {
+   .ant-typography-title {
+      font-size: var(--cv-title-size) !important;
+      line-height: 1.25;
+   }
+
+   .ant-typography,
+   .ant-table,
+   .ant-input,
+   .ant-select,
+   .ant-btn {
+      font-size: var(--cv-body-size);
+   }
+
+   .ant-typography-secondary,
+   .ant-typography.ant-typography-secondary {
+      font-size: var(--cv-sub-size);
+   }
+}
+
+/* =============================
+    ANT DESIGN TOOLTIP (GLOBAL)
+============================= */
+.ant-tooltip .ant-tooltip-inner {
+   background: var(--cv-primary);
+   color: var(--cv-primary-100);
+   border-radius: var(--cv-radius-md);
+}
+
+.ant-tooltip .ant-tooltip-arrow::before {
+   background: var(--cv-primary);
+}

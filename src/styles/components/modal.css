@@ -1,0 +1,352 @@
+/* Shared modal system styles (used by Calendar, Invoice, Packages)
+   Scope: only applies to Modals with wrapClassName="cv-calendarModal".
+*/
+
+/* Modal container (card-like, no shadow per design system) */
+.cv-calendarModal .ant-modal {
+  max-width: calc(100vw - 24px);
+  margin: 12px auto;
+}
+
+.cv-calendarModal .ant-modal-content {
+  border-radius: var(--cv-radius-lg);
+  border: 1px solid var(--cv-border-default);
+  background: var(--cv-bg-main);
+  box-shadow: var(--cv-shadow-md);
+  overflow: hidden;
+
+  /* Fixed header/footer + scrollable body */
+  display: flex;
+  flex-direction: column;
+  max-height: min(92vh, 820px);
+}
+
+/* Use our title component as the real header; AntD header/footer borders are removed */
+.cv-calendarModal .ant-modal-header {
+  margin: 0;
+  padding: 0 var(--cv-space-5);
+  border-bottom: none;
+  background: transparent;
+
+  flex: 0 0 auto;
+}
+
+.cv-calendarModal .ant-modal-title {
+  width: 100%;
+}
+
+.cv-calendarModal .ant-modal-body {
+  padding: var(--cv-space-5);
+  padding-top: var(--cv-space-4);
+
+  flex: 1 1 auto;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.cv-calendarModal .ant-modal-footer {
+  margin: 0;
+  padding: var(--cv-space-5);
+  border-top: none;
+  background: transparent;
+
+  flex: 0 0 auto;
+}
+
+/* Footer buttons: bigger tap targets + text, all modals */
+.cv-calendarModal .ant-modal-footer .ant-btn {
+  min-height: 44px;
+  padding: 10px 14px;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.cv-calendarModal .ant-modal-footer .ant-btn>span {
+  line-height: 1.1;
+}
+
+.cv-calendarModal .cv-modalH1 {
+  margin: 0;
+  line-height: 1.2;
+  font-weight: 850;
+  letter-spacing: -0.2px;
+  color: var(--cv-primary-900);
+  padding: 1.15rem 0;
+  border-bottom: 1px solid var(--cv-border-default);
+}
+
+@media (max-width: 560px) {
+  .cv-calendarModal .ant-modal-header {
+    padding: 0 var(--cv-space-4);
+  }
+
+  .cv-calendarModal .ant-modal-body {
+    padding: var(--cv-space-4);
+    padding-top: var(--cv-space-3);
+  }
+
+  .cv-calendarModal .ant-modal-footer {
+    padding: var(--cv-space-4);
+  }
+
+  .cv-calendarModal .cv-modalH1 {
+    padding: 0.95rem 0;
+  }
+}
+
+/* =============================
+   CENTERED MODAL (MOBILE TOO)
+   Keep modals centered across devices.
+============================= */
+
+.cv-calendarModal.ant-modal-centered .ant-modal {
+  margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+
+  /* Keep relying on explicit footer buttons for closing on mobile */
+  .cv-calendarModal .ant-modal-close {
+    display: none;
+  }
+
+  .cv-calendarModal .ant-modal {
+    max-width: calc(100vw - 24px);
+  }
+
+  .cv-calendarModal .ant-modal-content {
+    max-height: min(92vh, 760px);
+  }
+
+  /* Slightly more breathing room between input groups */
+  .cv-calendarModal .cv-modalGrid12 {
+    gap: 14px;
+  }
+}
+
+.cv-calendarModal .cv-modalFooterGrid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.cv-calendarModal .cv-modalFooterGrid>* {
+  grid-column: span 6;
+}
+
+.cv-calendarModal .cv-modalGrid12 {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 12px;
+}
+
+/* Section group (boxed) */
+.cv-calendarModal .cv-modalSection {
+  border: 1px solid var(--cv-border-default);
+  border-radius: var(--cv-radius-md);
+  padding: 1rem var(--cv-space-4);
+  position: relative;
+}
+
+.cv-calendarModal .cv-modalSectionTitle {
+  font-weight: 850;
+  color: var(--cv-primary-900);
+  line-height: 1.1;
+  top: -9px;
+  background: var(--cv-bg-main);
+  padding: 0 8px;
+  position: absolute;
+}
+
+/* Grid columns: use grid gap for spacing (avoid double vertical spacing) */
+.cv-calendarModal .cv-col-12 {
+  grid-column: span 12;
+}
+
+.cv-calendarModal .cv-col-4 {
+  grid-column: span 4;
+}
+
+.cv-calendarModal .cv-col-6 {
+  grid-column: span 6;
+}
+
+@media (max-width: 560px) {
+  .cv-calendarModal .cv-col-4 {
+    grid-column: span 12;
+  }
+
+  .cv-calendarModal .cv-col-6 {
+    grid-column: span 12;
+  }
+
+  .cv-calendarModal .cv-modalFooterGrid>* {
+    grid-column: span 12;
+  }
+}
+
+.cv-calendarModal .cv-fieldLabel {
+  color: var(--cv-primary-900);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.cv-calendarModal .cv-fieldLabelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* Calendar/invoice modal shared building blocks */
+.cv-calendarModal .cv-dateTimeHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 8px 0;
+}
+
+.cv-calendarModal .cv-allDayToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cv-calendarModal .cv-allDayLabel {
+  font-weight: 650;
+  color: var(--cv-text-secondary);
+}
+
+.cv-calendarModal .cv-dateTimeLabel {
+  font-weight: 600;
+  color: var(--cv-primary-900);
+}
+
+.cv-calendarModal .cv-timeRangeRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.cv-calendarModal .cv-timeSingleRow {
+  margin-top: 10px;
+}
+
+.cv-calendarModal .cv-timeArrow {
+  flex: 0 0 auto;
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--cv-text-muted);
+  opacity: 0.9;
+}
+
+.cv-calendarModal .cv-timeRangeRow .ant-picker,
+.cv-calendarModal .cv-timeSingleRow .ant-picker {
+  flex: 1 1 0;
+}
+
+.cv-calendarModal .ant-picker:hover {
+  border-color: var(--cv-border-strong);
+}
+
+/* Disabled date should still look premium (not washed out) */
+.cv-calendarModal .ant-picker-disabled {
+  background: #eee;
+  border: none;
+}
+
+.cv-calendarModal .ant-picker-input>input {
+  font-weight: 600;
+}
+
+.cv-calendarModal .ant-picker-disabled .ant-picker-input>input[disabled] {
+  color: var(--cv-text-primary);
+  -webkit-text-fill-color: var(--cv-text-primary);
+  opacity: 0.9;
+  border: none;
+}
+
+/* Input icons (Material Symbols) */
+.cv-calendarModal .ant-input-affix-wrapper {
+  border-radius: 14px;
+}
+
+.cv-calendarModal .ant-input-affix-wrapper .ant-input-prefix {
+  color: var(--cv-text-muted);
+  margin-inline-end: 8px;
+}
+
+.cv-calendarModal .ant-input::placeholder,
+.cv-calendarModal textarea::placeholder {
+  color: var(--cv-text-muted);
+  opacity: 0.9;
+}
+
+.cv-calendarModal .cv-textareaWithIcon {
+  position: relative;
+}
+
+.cv-calendarModal .cv-textareaWithIcon .cv-inputIcon {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--cv-text-muted);
+  pointer-events: none;
+}
+
+.cv-calendarModal .cv-textareaWithLeftIcon textarea {
+  padding-left: 42px;
+}
+
+/* =============================
+   DISABLED INPUTS – PREMIUM LOOK
+============================= */
+
+/* Base disabled background */
+.cv-calendarModal .ant-input[disabled],
+.cv-calendarModal .ant-input-affix-wrapper-disabled,
+.cv-calendarModal .ant-input-number-disabled,
+.cv-calendarModal .ant-select.ant-select-outlined.ant-select-disabled,
+.cv-calendarModal .ant-select-disabled .ant-select-selector,
+.cv-calendarModal textarea[disabled] {
+  background: #eee;
+  border: none;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+/* Disabled text color (not washed out) */
+.cv-calendarModal .ant-input[disabled],
+.cv-calendarModal textarea[disabled],
+.cv-calendarModal .ant-input-number-disabled input,
+.cv-calendarModal .ant-select-disabled .ant-select-selection-item {
+  color: var(--cv-text-primary);
+  -webkit-text-fill-color: var(--cv-text-primary);
+  opacity: 0.9;
+}
+
+/* Disabled placeholder */
+.cv-calendarModal .ant-input[disabled]::placeholder,
+.cv-calendarModal textarea[disabled]::placeholder {
+  color: var(--cv-text-muted);
+  opacity: 0.7;
+}
+
+
+/* Keep icons readable when disabled */
+.cv-calendarModal .ant-input-affix-wrapper-disabled .ant-input-prefix,
+.cv-calendarModal .ant-input-affix-wrapper-disabled .ant-input-suffix,
+.cv-calendarModal .ant-select-disabled .ant-select-arrow {
+  color: var(--cv-text-muted);
+  opacity: 0.8;
+}
+
+.cv-calendarModal .ant-picker-disabled .ant-picker-input>input {
+  color: var(--cv-text-primary);
+  -webkit-text-fill-color: var(--cv-text-primary);
+  opacity: 0.9;
+}

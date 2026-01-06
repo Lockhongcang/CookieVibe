@@ -1,0 +1,70 @@
+/* =============================
+   PACKAGES – TABLE BADGES
+============================= */
+
+.cv-packageBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cv-miniBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  border-radius: var(--cv-radius-pill);
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 18px;
+  border: 1px solid var(--cv-border-default);
+  background: var(--cv-bg-soft);
+  color: var(--cv-text-secondary);
+  white-space: nowrap;
+}
+
+.cv-miniBadge--success {
+  background: var(--cv-success-soft);
+  border-color: var(--cv-success-soft);
+  color: var(--cv-success);
+}
+
+.cv-packageSummary {
+  display: grid;
+  gap: 8px;
+  padding: 6px 0;
+}
+
+.cv-packageSummaryTitle {
+  font-weight: 700;
+  color: var(--cv-text-primary);
+}
+
+.cv-packageSummaryLine {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: baseline;
+}
+
+.cv-packageSummaryLabel {
+  font-weight: 500;
+  color: var(--cv-text-secondary);
+}
+
+.cv-packageSummaryValue {
+  font-weight: 750;
+  color: var(--cv-text-primary);
+}
+
+.cv-packageSummaryActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+@media (max-width: 768px) {
+  .cv-miniBadge {
+    font-size: clamp(12px, 3vw, 13px);
+  }
+}
