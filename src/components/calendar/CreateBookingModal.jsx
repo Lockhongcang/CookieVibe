@@ -1,17 +1,38 @@
 import dayjs from 'dayjs'
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Button, DatePicker, Input, InputNumber, Modal, Select, Switch, TimePicker } from 'antd'
 import { toast } from 'react-toastify'
 import { toNumber } from '../../utils/number.js'
 import { createBooking } from '../../services/booking.service'
+import { createInvoice, getInvoiceByBookingId, updateInvoice } from '../../services/invoice.service'
 
 const DEFAULT_DURATION_MINUTES = 60
 const INITIAL_DEFAULT_DURATION_MINUTES = 120
+
+const DAY_BOOKING_LIMIT = 2
+
+const CURRENCY_MIN = 1000
+const CURRENCY_MAX = 10000000
 
 const isValidVnPhone = (value) => {
   if (!value) return true
   const normalized = String(value).trim().replace(/[\s.-]/g, '')
   return /^(?:\+?84|0)\d{9,10}$/.test(normalized)
+}
+
+const normalizeToVnPhone10 = (value) => {
+  const digits = String(value || '').replace(/\D/g, '')
+  if (!digits) return ''
+
+  // +84xxxxxxxxx / 84xxxxxxxxx => 0xxxxxxxxx
+  if (digits.startsWith('84') && digits.length === 11) return `0${digits.slice(2)}`
+  return digits
+}
+
+const isValidVnPhone10Digits = (value) => {
+  if (!value) return false
+  const normalized = normalizeToVnPhone10(value)
+  return /^0\d{9}$/.test(normalized)
 }
 
 const timeStringToDayjs = (value) => {
@@ -54,7 +75,9 @@ const getInitialFormFromRange = (defaultRange) => {
     end_time: normalizedEnd.format('HH:mm'),
     package_id: null,
     people_count: 1,
-    note: ''
+    note: '',
+    price: null,
+    deposit: 0
   }
 }
 
@@ -77,6 +100,13 @@ function CreateBookingModalInner({
   const [creating, setCreating] = useState(false)
   const [form, setForm] = useState(() => getInitialFormFromRange(defaultRange))
 
+  const initialFormRef = useRef(getInitialFormFromRange(defaultRange))
+
+  const [priceTouched, setPriceTouched] = useState(false)
+
+  const [submitAttempted, setSubmitAttempted] = useState(false)
+  const [touched, setTouched] = useState({})
+
   const [allDay, setAllDay] = useState(false)
   const lastTimeRangeRef = useRef({ start_time: form.start_time, end_time: form.end_time })
 
@@ -94,17 +124,92 @@ function CreateBookingModalInner({
   const selectedPackage = (packageOptions || []).find((p) => p?.value === form.package_id) || null
   const showPeopleCount = selectedPackage?.label === 'Cookie Nhiều mình'
 
-  const hasUserInput = useMemo(() => {
-    return Boolean(
-      String(form.customer_name || '').trim()
-      || String(form.customer_phone || '').trim()
-      || String(form.location || '').trim()
-      || String(form.note || '').trim()
-      || form.package_id
-    )
-  }, [form.customer_name, form.customer_phone, form.location, form.note, form.package_id])
+  const formatVndOrDash = (value) => {
+    if (value === null || value === undefined || value === '') return '--'
+    const n = toNumber(value, NaN)
+    if (!Number.isFinite(n)) return '--'
+    return `${n.toLocaleString('vi-VN')} VNĐ`
+  }
 
-  const hasConflict = () => {
+  const toInt = (value, fallback = 0) => {
+    const n = toNumber(value, fallback)
+    if (!Number.isFinite(n)) return fallback
+    return Math.round(n)
+  }
+
+  const computeCookieNhieuMinhBasePrice = (peopleCount) => {
+    const count = Math.max(1, toNumber(peopleCount))
+    if (count === 3 || count === 4) return count * 400000
+    if (count >= 5) return count * 350000
+    return 0
+  }
+
+  const computedDefaultPrice = useMemo(() => {
+    if (showPeopleCount) return computeCookieNhieuMinhBasePrice(form.people_count)
+    return selectedPackage?.price ?? null
+  }, [form.people_count, selectedPackage?.price, showPeopleCount])
+
+  useEffect(() => {
+    // When user selects/changing package (or people count for special package), default price updates
+    // unless user has manually overridden it.
+    if (priceTouched) return
+    setForm((p) => ({ ...p, price: computedDefaultPrice }))
+  }, [computedDefaultPrice, priceTouched])
+
+  useEffect(() => {
+    // Reset price override when modal is reopened with a new key.
+    if (!open) return
+    setPriceTouched(false)
+  }, [open])
+
+  useEffect(() => {
+    if (!open) return
+    // Snapshot baseline so we can detect whether user actually changed anything.
+    initialFormRef.current = getInitialFormFromRange(defaultRange)
+  }, [open, defaultRange])
+
+  useEffect(() => {
+    if (!open) return
+    setSubmitAttempted(false)
+    setTouched({})
+  }, [open, defaultRange])
+
+  const isDirty = useMemo(() => {
+    const base = initialFormRef.current || {}
+    const baseline = {
+      customer_name: String(base.customer_name || '').trim(),
+      customer_phone: String(base.customer_phone || '').trim(),
+      location: String(base.location || '').trim(),
+      start_date: String(base.start_date || '').trim(),
+      start_time: String(base.start_time || '').trim(),
+      end_time: String(base.end_time || '').trim(),
+      package_id: base.package_id ?? null,
+      people_count: toNumber(base.people_count) || 1,
+      note: String(base.note || '').trim(),
+      price: base.price === null || base.price === undefined ? null : toNumber(base.price),
+      deposit: toNumber(base.deposit) || 0,
+      allDay: false
+    }
+
+    const current = {
+      customer_name: String(form.customer_name || '').trim(),
+      customer_phone: String(form.customer_phone || '').trim(),
+      location: String(form.location || '').trim(),
+      start_date: String(form.start_date || '').trim(),
+      start_time: String(form.start_time || '').trim(),
+      end_time: String(form.end_time || '').trim(),
+      package_id: form.package_id ?? null,
+      people_count: toNumber(form.people_count) || 1,
+      note: String(form.note || '').trim(),
+      price: form.price === null || form.price === undefined ? null : toNumber(form.price),
+      deposit: toNumber(form.deposit) || 0,
+      allDay: Boolean(allDay)
+    }
+
+    return JSON.stringify(baseline) !== JSON.stringify(current)
+  }, [allDay, form])
+
+  function hasConflict() {
     const start = dayjs(`${form.start_date}T${form.start_time}`)
     const end = dayjs(`${form.start_date}T${form.end_time}`)
 
@@ -130,17 +235,113 @@ function CreateBookingModalInner({
     return null
   }
 
+  const errors = useMemo(() => {
+    const out = {}
+
+    // Day limit: max N bookings per day (exclude canceled)
+    const dayKey = String(form.start_date || '').trim()
+    if (dayKey) {
+      const count = (existingBookings || []).filter((b) => {
+        if (!b) return false
+        const rawStatus = String(b?.status || 'scheduled')
+        if (rawStatus === 'canceled') return false
+        const key = b?.start_datetime ? dayjs(b.start_datetime).format('YYYY-MM-DD') : ''
+        return key === dayKey
+      }).length
+
+      if (count >= DAY_BOOKING_LIMIT) {
+        out.conflict = `Ngày này đã đủ ${DAY_BOOKING_LIMIT} lịch chụp`
+      }
+    }
+
+    const name = String(form.customer_name || '').trim()
+    if (!name) out.customer_name = 'Vui lòng nhập tên khách hàng'
+
+    if (!form.package_id) out.package_id = 'Vui lòng chọn gói chụp'
+
+    const phone = String(form.customer_phone || '').trim()
+    if (phone && !isValidVnPhone10Digits(phone)) out.customer_phone = 'Số điện thoại phải đủ 10 số'
+
+    const start = dayjs(`${form.start_date}T${form.start_time}`)
+    const end = dayjs(`${form.start_date}T${form.end_time}`)
+    if (!start.isValid() || !end?.isValid()) out.timeRange = 'Vui lòng nhập ngày/giờ hợp lệ'
+    else if (!end.isAfter(start)) out.timeRange = 'Giờ kết thúc phải sau giờ bắt đầu'
+
+    const shouldValidateInvoice = Boolean(
+      form.package_id
+      || (form.price !== null && form.price !== undefined && String(form.price) !== '')
+      || toInt(form.deposit, 0) > 0
+    )
+
+    if (shouldValidateInvoice) {
+      const totalAmount = toInt(form.price, NaN)
+      const deposit = toInt(form.deposit, 0)
+      if (Number.isFinite(totalAmount)) {
+        if (totalAmount > 0 && totalAmount < CURRENCY_MIN) out.price = `Giá phải = 0 hoặc ≥ ${CURRENCY_MIN.toLocaleString('vi-VN')}`
+        else if (totalAmount > CURRENCY_MAX) out.price = `Giá không được lớn hơn ${CURRENCY_MAX.toLocaleString('vi-VN')}`
+      }
+
+      if (deposit < 0) out.deposit = 'Tiền cọc không hợp lệ'
+      else if (deposit > 0 && deposit < CURRENCY_MIN) out.deposit = `Tiền cọc phải = 0 hoặc ≥ ${CURRENCY_MIN.toLocaleString('vi-VN')}`
+      else if (deposit > CURRENCY_MAX) out.deposit = `Tiền cọc không được lớn hơn ${CURRENCY_MAX.toLocaleString('vi-VN')}`
+      else if (Number.isFinite(totalAmount) && deposit > totalAmount) out.deposit = 'Tiền cọc không được lớn hơn giá'
+    }
+
+    const conflictMsg = hasConflict()
+    if (!out.conflict && conflictMsg) out.conflict = conflictMsg
+
+    return out
+  }, [form, existingBookings])
+
+  const showError = (key) => Boolean((submitAttempted || touched?.[key]) && errors?.[key])
+
+  const upsertInvoiceForBooking = async (bookingRow) => {
+    const bookingId = bookingRow?.id
+    if (!bookingId) return { error: { message: 'Thiếu booking_id' } }
+
+    const totalAmount = toInt(form.price, 0)
+    const deposit = toInt(form.deposit, 0)
+
+    const payload = {
+      booking_id: bookingId,
+      package_id: form.package_id,
+      base_price: totalAmount,
+      total_amount: totalAmount,
+      deposit
+    }
+
+    // Try to update trigger-created invoice (with short retries), otherwise create.
+    let lastErr = null
+    for (let i = 0; i < 3; i++) {
+      // eslint-disable-next-line no-await-in-loop
+      const { data: inv, error: invErr } = await getInvoiceByBookingId(bookingId)
+      if (!invErr && inv?.id) {
+        return await updateInvoice(inv.id, payload)
+      }
+      lastErr = invErr
+
+      // eslint-disable-next-line no-await-in-loop
+      await new Promise((r) => setTimeout(r, 300))
+    }
+
+    const created = await createInvoice({ ...payload, status: 'draft' })
+    if (created?.error) return created
+    if (created?.data) return created
+    return { data: null, error: lastErr || { message: 'Không thể tạo/ cập nhật hoá đơn' } }
+  }
+
   const confirmCreate = async () => {
     return await new Promise((resolve) => {
       Modal.confirm({
         title: 'Tạo lịch mới?'
-        , content: 'Xác nhận tạo lịch với thông tin hiện tại.'
+        , content: 'Bạn muốn tạo lịch với thông tin hiện tại?'
+        , centered: true
         , icon: (
-          <span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1 }}>
+          <span className="material-symbols-rounded">
             help
           </span>
         )
-        , okText: 'Tạo lịch'
+        , okText: 'Tạo'
         , cancelText: 'Xem lại'
         , onOk: () => resolve(true)
         , onCancel: () => resolve(false)
@@ -149,17 +350,17 @@ function CreateBookingModalInner({
   }
 
   const confirmCancel = async () => {
-    if (!hasUserInput) return true
     return await new Promise((resolve) => {
       Modal.confirm({
-        title: 'Huỷ thao tác?'
-        , content: 'Thông tin bạn nhập sẽ bị mất.'
+        title: 'Bỏ tạo lịch?'
+        , content: 'Thông tin bạn nhập sẽ không được lưu.'
+        , centered: true
         , icon: (
-          <span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1 }}>
+          <span className="material-symbols-rounded">
             warning
           </span>
         )
-        , okText: 'Huỷ'
+        , okText: 'Bỏ'
         , okButtonProps: { danger: true }
         , cancelText: 'Tiếp tục'
         , onOk: () => resolve(true)
@@ -172,19 +373,16 @@ function CreateBookingModalInner({
     try {
       if (creating) return
 
-      if (!form.customer_name.trim()) return toast.error('Vui lòng nhập tên khách hàng')
-      if (!form.start_date) return toast.error('Vui lòng chọn ngày chụp')
-      if (!form.start_time || !form.end_time) return toast.error('Vui lòng chọn giờ chụp')
-      if (!form.package_id) return toast.error('Vui lòng chọn gói')
-      if (!isValidVnPhone(form.customer_phone)) return toast.error('Số điện thoại không hợp lệ')
+      setSubmitAttempted(true)
+      if (Object.keys(errors || {}).length) return
 
       const start = dayjs(`${form.start_date}T${form.start_time}`)
       const end = dayjs(`${form.start_date}T${form.end_time}`)
-      if (!start.isValid() || !end.isValid()) return toast.error('Vui lòng nhập ngày/giờ hợp lệ')
-      if (!end.isAfter(start)) return toast.error('Giờ kết thúc phải sau giờ bắt đầu')
+      if (!start.isValid() || !end.isValid()) return
+      if (!end.isAfter(start)) return
 
       const conflictMsg = hasConflict()
-      if (conflictMsg) return toast.error(conflictMsg)
+      if (conflictMsg) return
 
       const payload = {
         customer_name: form.customer_name.trim(),
@@ -201,12 +399,23 @@ function CreateBookingModalInner({
       if (!ok) return
 
       setCreating(true)
-      const { error } = await createBooking(payload)
+      const { data: createdBooking, error } = await createBooking(payload)
       setCreating(false)
 
       if (error) {
         toast.error(error.message || 'Không thể tạo booking')
         return
+      }
+
+      // Auto-create/update invoice with user-entered price & deposit (when enough data is present).
+      const totalAmount = toInt(form.price, NaN)
+      const canUpsertInvoice = Boolean(form.package_id) && Number.isFinite(totalAmount) && totalAmount > 0
+      if (canUpsertInvoice) {
+        const { error: invErr } = await upsertInvoiceForBooking(createdBooking)
+        if (invErr) {
+          console.error(invErr)
+          toast.error(invErr.message || 'Đã tạo booking nhưng không thể tạo/cập nhật hoá đơn')
+        }
       }
 
       toast.success('Tạo booking thành công')
@@ -230,6 +439,11 @@ function CreateBookingModalInner({
         </span>
       )}
       onCancel={async () => {
+        if (!isDirty) {
+          onClose?.()
+          return
+        }
+
         const ok = await confirmCancel()
         if (!ok) return
         onClose?.()
@@ -238,6 +452,11 @@ function CreateBookingModalInner({
         <div className="cv-modalFooterGrid">
           <Button
             onClick={async () => {
+              if (!isDirty) {
+                onClose?.()
+                return
+              }
+
               const ok = await confirmCancel()
               if (!ok) return
               onClose?.()
@@ -289,6 +508,7 @@ function CreateBookingModalInner({
               allowClear={false}
               disabled={hasPresetDay}
               inputReadOnly
+              getPopupContainer={(trigger) => trigger?.parentElement || document.body}
               suffixIcon={(
                 <span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1 }}>
                   calendar_month
@@ -300,10 +520,13 @@ function CreateBookingModalInner({
             <div className="cv-timeRangeRow">
               <TimePicker
                 value={timeStringToDayjs(form.start_time)}
-                onChange={(d) => setForm((p) => ({ ...p, start_time: dayjsToTimeString(d) }))}
+                onChange={(d) => {
+                  setTouched((p) => ({ ...p, timeRange: true }))
+                  setForm((p) => ({ ...p, start_time: dayjsToTimeString(d) }))
+                }}
                 format="HH:mm"
                 allowClear={false}
-                disabled={allDay}
+                getPopupContainer={(trigger) => trigger?.parentElement || document.body}
                 suffixIcon={(
                   <span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1 }}>
                     schedule
@@ -316,10 +539,13 @@ function CreateBookingModalInner({
               </span>
               <TimePicker
                 value={timeStringToDayjs(form.end_time)}
-                onChange={(d) => setForm((p) => ({ ...p, end_time: dayjsToTimeString(d) }))}
+                onChange={(d) => {
+                  setTouched((p) => ({ ...p, timeRange: true }))
+                  setForm((p) => ({ ...p, end_time: dayjsToTimeString(d) }))
+                }}
                 format="HH:mm"
                 allowClear={false}
-                disabled={allDay}
+                getPopupContainer={(trigger) => trigger?.parentElement || document.body}
                 suffixIcon={(
                   <span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1 }}>
                     schedule
@@ -328,6 +554,9 @@ function CreateBookingModalInner({
                 style={{ width: '100%' }}
               />
             </div>
+
+            {showError('timeRange') ? <div className="cv-fieldErrorText">{errors.timeRange}</div> : null}
+            {showError('conflict') ? <div className="cv-fieldErrorText">{errors.conflict}</div> : null}
           </div>
         </div>
 
@@ -336,14 +565,19 @@ function CreateBookingModalInner({
             <div className="cv-fieldLabel">Tên khách hàng</div>
             <Input
               value={form.customer_name}
-              onChange={onChange('customer_name')}
+              onChange={(e) => {
+                setTouched((p) => ({ ...p, customer_name: true }))
+                onChange('customer_name')(e)
+              }}
               placeholder="Nhập tên khách…"
+              status={showError('customer_name') ? 'error' : ''}
               prefix={(
                 <span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1 }}>
                   person
                 </span>
               )}
             />
+            {showError('customer_name') ? <div className="cv-fieldErrorText">{errors.customer_name}</div> : null}
           </div>
         </div>
 
@@ -353,14 +587,19 @@ function CreateBookingModalInner({
             <Input
               inputMode="tel"
               value={form.customer_phone}
-              onChange={onChange('customer_phone')}
+              onChange={(e) => {
+                setTouched((p) => ({ ...p, customer_phone: true }))
+                onChange('customer_phone')(e)
+              }}
               placeholder="Nhập số điện thoại…"
+              status={showError('customer_phone') ? 'error' : ''}
               prefix={(
                 <span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1 }}>
                   call
                 </span>
               )}
             />
+            {showError('customer_phone') ? <div className="cv-fieldErrorText">{errors.customer_phone}</div> : null}
           </div>
         </div>
 
@@ -369,14 +608,19 @@ function CreateBookingModalInner({
             <div className="cv-fieldLabel">Địa điểm</div>
             <Input
               value={form.location}
-              onChange={onChange('location')}
+              onChange={(e) => {
+                setTouched((p) => ({ ...p, location: true }))
+                onChange('location')(e)
+              }}
               placeholder="Nhập địa chỉ…"
+              status={showError('location') ? 'error' : ''}
               prefix={(
                 <span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1 }}>
                   location_on
                 </span>
               )}
             />
+            {showError('location') ? <div className="cv-fieldErrorText">{errors.location}</div> : null}
           </div>
         </div>
 
@@ -385,10 +629,14 @@ function CreateBookingModalInner({
             <div className="cv-fieldLabel">Gói chụp</div>
             <Select
               value={form.package_id || undefined}
-              onChange={handlePackageChange}
+              onChange={(value) => {
+                setTouched((p) => ({ ...p, package_id: true }))
+                handlePackageChange(value)
+              }}
               options={(packageOptions || []).map((p) => ({ value: p.value, label: p.label }))}
               placeholder={packageOptions?.length ? 'Chọn gói' : 'Chưa có danh sách gói'}
               disabled={!packageOptions?.length}
+              status={showError('package_id') ? 'error' : ''}
               suffixIcon={(
                 <span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1 }}>
                   expand_more
@@ -396,6 +644,73 @@ function CreateBookingModalInner({
               )}
               style={{ width: '100%' }}
             />
+            {showError('package_id') ? <div className="cv-fieldErrorText">{errors.package_id}</div> : null}
+          </div>
+        </div>
+
+        <div className="cv-col-6">
+          <div className="cv-field">
+            <div className="cv-fieldLabel">Giá</div>
+            <InputNumber
+              value={form.price === null || form.price === undefined ? null : toInt(form.price)}
+              onChange={(v) => {
+                setPriceTouched(true)
+                setTouched((p) => ({ ...p, price: true }))
+                setForm((p) => ({ ...p, price: v === null ? null : toInt(v) }))
+              }}
+              min={0}
+              max={CURRENCY_MAX}
+              controls={false}
+              status={showError('price') ? 'error' : ''}
+              style={{ width: '100%' }}
+              formatter={(v) => {
+                if (v === null || v === undefined || v === '') return ''
+                const n = toInt(v, NaN)
+                if (!Number.isFinite(n)) return ''
+                return n.toLocaleString('vi-VN')
+              }}
+              parser={(v) => {
+                if (v === null || v === undefined) return ''
+                return String(v)
+                  .replace(/[\s,.đ₫]/g, '')
+                  .replace(/vnđ|vnd/gi, '')
+              }}
+            />
+            {showError('price') ? <div className="cv-fieldErrorText">{errors.price}</div> : null}
+          </div>
+        </div>
+
+        <div className="cv-col-6">
+          <div className="cv-field">
+            <div className="cv-fieldLabel">Tiền cọc</div>
+            <InputNumber
+              value={toInt(form.deposit)}
+              onChange={(v) => {
+                setTouched((p) => ({ ...p, deposit: true }))
+                setForm((p) => ({ ...p, deposit: v === null ? 0 : toInt(v) }))
+              }}
+              min={0}
+              max={(() => {
+                const priceCap = form.price !== null && form.price !== undefined ? toInt(form.price) : CURRENCY_MAX
+                return Math.min(CURRENCY_MAX, priceCap)
+              })()}
+              controls={false}
+              status={showError('deposit') ? 'error' : ''}
+              style={{ width: '100%' }}
+              formatter={(v) => {
+                if (v === null || v === undefined || v === '') return ''
+                const n = toInt(v, NaN)
+                if (!Number.isFinite(n)) return ''
+                return n.toLocaleString('vi-VN')
+              }}
+              parser={(v) => {
+                if (v === null || v === undefined) return ''
+                return String(v)
+                  .replace(/[\s,.đ₫]/g, '')
+                  .replace(/vnđ|vnd/gi, '')
+              }}
+            />
+            {showError('deposit') ? <div className="cv-fieldErrorText">{errors.deposit}</div> : null}
           </div>
         </div>
 

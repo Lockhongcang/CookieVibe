@@ -18,6 +18,8 @@ const Icon = ({ name }) => (
 export default function App() {
   const [activeKey, setActiveKey] = useState('dashboard')
   const [invoiceBookingId, setInvoiceBookingId] = useState(null)
+  const [invoiceReturnTo, setInvoiceReturnTo] = useState(null)
+  const [calendarAutoOpenBookingId, setCalendarAutoOpenBookingId] = useState(null)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
 
@@ -39,9 +41,23 @@ export default function App() {
 
   const openInvoice = useCallback((bookingId) => {
     if (!bookingId) return
+    setInvoiceReturnTo({ key: activeKey, bookingId })
     setInvoiceBookingId(bookingId)
     setActiveKey('invoice')
-  }, [])
+  }, [activeKey])
+
+  const closeInvoiceAndReturn = useCallback(() => {
+    const backKey = invoiceReturnTo?.key || 'invoice'
+    const backBookingId = invoiceReturnTo?.bookingId || null
+
+    setInvoiceBookingId(null)
+    setInvoiceReturnTo(null)
+    setActiveKey(backKey)
+
+    if (backKey === 'calendar' && backBookingId) {
+      setCalendarAutoOpenBookingId(backBookingId)
+    }
+  }, [invoiceReturnTo])
 
   const navItems = useMemo(
     () => [
@@ -58,13 +74,22 @@ export default function App() {
       return (
         <InvoicePage
           bookingId={invoiceBookingId}
+          onBack={invoiceReturnTo ? closeInvoiceAndReturn : null}
         />
       )
     }
-    if (activeKey === 'calendar') return <CalendarPage onOpenInvoice={openInvoice} />
+    if (activeKey === 'calendar') {
+      return (
+        <CalendarPage
+          onOpenInvoice={openInvoice}
+          autoOpenBookingId={calendarAutoOpenBookingId}
+          onAutoOpenConsumed={() => setCalendarAutoOpenBookingId(null)}
+        />
+      )
+    }
     if (activeKey === 'packages') return <PackagesPage />
     return <DashboardPage />
-  }, [activeKey, invoiceBookingId, openInvoice])
+  }, [activeKey, calendarAutoOpenBookingId, closeInvoiceAndReturn, invoiceBookingId, invoiceReturnTo, openInvoice])
 
   const goTo = useCallback((key) => {
     if (!key) return

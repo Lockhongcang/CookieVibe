@@ -7,7 +7,7 @@ const toNumber = (value) => {
   return Number.isFinite(num) ? num : 0
 }
 
-const formatVnd = (value) => `${toNumber(value).toLocaleString('vi-VN')} đ`
+const formatVnd = (value) => `${toNumber(value).toLocaleString('vi-VN')} VNĐ`
 
 const formatPctSigned = (value) => {
   const n = toNumber(value)
@@ -28,6 +28,7 @@ export default function DashboardKpiCards({ data, loading = false }) {
   const kpi = useMemo(() => {
     const safe = data || {}
     return {
+      totalRevenueAllTime: toNumber(safe.totalRevenueAllTime),
       totalRevenue: toNumber(safe.totalRevenue),
       totalRevenueMonth: toNumber(safe.totalRevenueMonth),
       totalRemainingMonth: toNumber(safe.totalRemainingMonth),
@@ -39,14 +40,14 @@ export default function DashboardKpiCards({ data, loading = false }) {
     }
   }, [data])
 
-  // UX: Make one KPI primary (monthly revenue) to anchor attention.
+  // UX: Make one KPI primary to anchor attention.
   const primary = {
-    key: 'totalRevenueMonth',
+    key: 'totalRevenueAllTime',
     icon: 'monitoring',
-    title: 'Tổng doanh thu theo tháng',
-    value: formatVnd(kpi.totalRevenueMonth),
-    pct: kpi.rateTotalRevenueMonth,
-    label: 'so với tháng trước'
+    title: 'Tổng doanh thu toàn dự án',
+    value: formatVnd(kpi.totalRevenueAllTime),
+    pct: 0,
+    label: 'tính toàn bộ'
   }
 
   const secondary = [

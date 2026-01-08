@@ -1,5 +1,3 @@
-
-
 /* =============================
    FORM LABEL
 ============================= */
@@ -277,13 +275,30 @@
    transform: translateY(-50%);
 }
 
-.ant-select.ant-select-outlined.css-var-_r_0_.ant-select-css-var.css-dev-only-do-not-override-1uga22k.ant-select-single.ant-select-show-arrow,
-textarea.ant-input.css-dev-only-do-not-override-1uga22k.ant-input-outlined.css-var-root.ant-input-css-var,
-.ant-picker.ant-picker-outlined.css-dev-only-do-not-override-1uga22k.css-var-root.ant-picker-css-var {
-   border-radius: 14px;
-   padding: 0.5rem 1rem;
+/* =============================
+   INPUT.SEARCH
+   Keep search button same height as inputs.
+============================= */
+.ant-input-search :where(.ant-input-search-button,
+   .ant-btn.ant-input-search-button,
+   .ant-btn.ant-input-search-btn,
+   .ant-input-search-btn) {
+   height: 40px;
+   min-height: 40px;
+   padding: 0 14px;
+   border-radius: var(--cv-radius-md);
 }
 
-button.ant-btn.css-dev-only-do-not-override-1uga22k.css-var-_r_0_.ant-btn-default.ant-btn-color-default.ant-btn-variant-outlined.ant-btn-icon-only.ant-btn-compact-item.ant-btn-compact-last-item.ant-input-search-btn {
-   padding: 1.2rem;
+/* =============================
+   BUTTON FOCUS (NO BLUE RING)
+============================= */
+:where(.ant-btn:focus,
+   .ant-btn:focus-visible) {
+   outline: none;
+   border-color: var(--cv-border-strong);
+   box-shadow: 0 0 0 3px var(--cv-border-soft);
+}
+
+.ant-select.ant-select-outlined {
+   padding: 0.5rem;
 }

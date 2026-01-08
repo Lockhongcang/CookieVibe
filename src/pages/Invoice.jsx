@@ -37,14 +37,14 @@ const toInt = (value, fallback = 0) => {
   return Math.round(n)
 }
 
-const formatVnd = (value) => `${toInt(value).toLocaleString('vi-VN')} đ`
+const formatVnd = (value) => `${toInt(value).toLocaleString('vi-VN')} VNĐ`
 
 const normalizeInvoiceStatus = (status) => {
   if (status === 'paid') return 'completed'
   return status
 }
 
-export default function InvoicePage({ bookingId }) {
+export default function InvoicePage({ bookingId, onBack }) {
   // bookingId is now used as an optional initialBookingId to auto-open the detail modal.
   const initialBookingId = bookingId
 
@@ -54,7 +54,10 @@ export default function InvoicePage({ bookingId }) {
   const [detailOpen, setDetailOpen] = useState(() => Boolean(initialBookingId))
   const [detailBookingId, setDetailBookingId] = useState(() => initialBookingId || null)
 
-  const [filterRange, setFilterRange] = useState(null)
+  const [filterRange, setFilterRange] = useState(() => {
+    const today = dayjs()
+    return [today, today]
+  })
   const [filterPackageId, setFilterPackageId] = useState(null)
   const [filterStatus, setFilterStatus] = useState(null)
   const [searchText, setSearchText] = useState('')
@@ -214,7 +217,7 @@ export default function InvoicePage({ bookingId }) {
       if (nextStatus === 'completed') await setBookingStatus(row.booking_id, 'completed')
       else if (nextStatus === 'canceled') await setBookingStatus(row.booking_id, 'canceled')
     } catch (e) {
-      console.warn(e)
+      // silently fail
     }
 
     toast.success('Đã cập nhật trạng thái')
@@ -369,7 +372,7 @@ export default function InvoicePage({ bookingId }) {
         <Space align="center" style={{ width: '100%', justifyContent: 'space-between' }} wrap>
           <div>
             <Title level={3} style={{ margin: 0 }}>Hoá đơn</Title>
-            <Text type="secondary">Danh sách tất cả hoá đơn</Text>
+            <Text type="secondary">Mặc định hiển thị hoá đơn trong ngày. Dùng lọc/tìm kiếm để xem thêm.</Text>
           </div>
         </Space>
 
@@ -414,7 +417,8 @@ export default function InvoicePage({ bookingId }) {
 
             <Button
               onClick={() => {
-                setFilterRange(null)
+                const today = dayjs()
+                setFilterRange([today, today])
                 setFilterPackageId(null)
                 setFilterStatus(null)
                 setSearchText('')
@@ -462,6 +466,10 @@ export default function InvoicePage({ bookingId }) {
           open={detailOpen}
           bookingId={detailBookingId}
           onClose={() => {
+            if (initialBookingId && onBack) {
+              onBack()
+              return
+            }
             setDetailOpen(false)
             setDetailBookingId(null)
           }}

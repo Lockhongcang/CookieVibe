@@ -209,6 +209,36 @@ const fetchAllInvoicesForPackageTotals = async () => {
   return { data: acc, error: null }
 }
 
+const fetchTotalRevenueAllTimePaid = async () => {
+  const pageSize = 1000
+  let from = 0
+  let total = 0
+
+  const paidLike = (s) => s === 'paid' || s === 'completed'
+
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const { data, error } = await supabase
+      .from('invoices')
+      .select('id, status, total_amount')
+      .order('id', { ascending: true })
+      .range(from, from + pageSize - 1)
+
+    if (error) return { data: null, error }
+
+    const list = Array.isArray(data) ? data : []
+    for (const inv of list) {
+      if (!paidLike(inv?.status)) continue
+      total += toNumber(inv?.total_amount)
+    }
+
+    if (list.length < pageSize) break
+    from += pageSize
+  }
+
+  return { data: total, error: null }
+}
+
 export const getDashboardOverview = async (month, year, revenueOptions = {}) => {
   let range
   try {
@@ -271,7 +301,8 @@ export const getDashboardOverview = async (month, year, revenueOptions = {}) => 
     { data: bookingsPrevWeek, error: bookingPrevWeekErr },
     { data: bookingsRecent, error: bookingRecentErr },
     { data: invoicesRevenue, error: invRevenueErr },
-    { data: allInvoicesForPackages, error: invAllErr }]
+    { data: allInvoicesForPackages, error: invAllErr },
+    { data: totalRevenueAllTime, error: invAllTimeErr }]
     = await Promise.all([
       supabase
         .from('invoices')
@@ -326,6 +357,8 @@ export const getDashboardOverview = async (month, year, revenueOptions = {}) => 
         .gte('created_at', revenueFromIso)
         .lt('created_at', revenueToExclusiveIso),
       fetchAllInvoicesForPackageTotals()
+      ,
+      fetchTotalRevenueAllTimePaid()
     ])
 
   const anyError = invMonthErr
@@ -339,6 +372,7 @@ export const getDashboardOverview = async (month, year, revenueOptions = {}) => 
     || bookingRecentErr
     || invRevenueErr
     || invAllErr
+    || invAllTimeErr
   if (anyError) return { data: null, error: anyError }
 
   const monthRevenue = sumPaidRevenue(invoicesMonth)
@@ -398,6 +432,7 @@ export const getDashboardOverview = async (month, year, revenueOptions = {}) => 
   return {
     data: {
       kpis: {
+        totalRevenueAllTime,
         totalRevenue: weekRevenue,
         totalRevenueMonth: monthRevenue,
         totalRemainingMonth: monthRemaining,

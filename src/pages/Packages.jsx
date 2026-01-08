@@ -2,8 +2,11 @@ import { Button, Card, Input, InputNumber, Modal, Space, Switch, Table, Typograp
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
 import { toNumber } from '../utils/number.js'
-import { createPackage, deletePackage, getPackages, updatePackage } from '../services/package.service'
+import { createPackage, getPackages, updatePackage } from '../services/package.service'
 import '../styles/pages/packages.css'
+
+const CURRENCY_MIN = 1000
+const CURRENCY_MAX = 10000000
 
 const formatWithCommas = (value) => {
   if (value === null || value === undefined || value === '') return ''
@@ -35,6 +38,8 @@ function PackagesPage() {
   const [modalMode, setModalMode] = useState('create') // 'create' | 'edit'
   const [activeRow, setActiveRow] = useState(null)
   const [saving, setSaving] = useState(false)
+  const [submitAttempted, setSubmitAttempted] = useState(false)
+  const [touched, setTouched] = useState({})
 
   const [form, setForm] = useState({
     name: '',
@@ -135,6 +140,8 @@ function PackagesPage() {
     setActiveRow(null)
     setSaving(false)
     setInitialModalForm(null)
+    setSubmitAttempted(false)
+    setTouched({})
   }
 
   const confirmDiscardIfDirty = async () => {
@@ -143,14 +150,15 @@ function PackagesPage() {
       Modal.confirm({
         title: 'Huỷ thay đổi?'
         , content: 'Bạn có thay đổi chưa lưu. Nếu huỷ, dữ liệu sẽ bị mất.'
+        , centered: true
         , icon: (
-          <span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1 }}>
+          <span className="material-symbols-rounded">
             warning
           </span>
         )
-        , okText: 'Huỷ'
+        , okText: 'Bỏ'
         , okButtonProps: { danger: true }
-        , cancelText: 'Tiếp tục chỉnh'
+        , cancelText: 'Tiếp tục'
         , onOk: () => resolve(true)
         , onCancel: () => resolve(false)
       })
@@ -163,6 +171,23 @@ function PackagesPage() {
     if (!ok) return
     closeModal()
   }
+
+  const modalErrors = useMemo(() => {
+    if (!modalOpen) return {}
+    const out = {}
+    const name = String(form.name || '').trim()
+    const price = toNumber(form.price)
+
+    if (!name) out.name = 'Vui lòng nhập tên gói'
+
+    if (!Number.isFinite(price) || price <= 0) out.price = 'Vui lòng nhập giá'
+    else if (price < CURRENCY_MIN) out.price = `Giá phải ≥ ${CURRENCY_MIN.toLocaleString('vi-VN')}`
+    else if (price > CURRENCY_MAX) out.price = `Giá không được lớn hơn ${CURRENCY_MAX.toLocaleString('vi-VN')}`
+
+    return out
+  }, [form.name, form.price, modalOpen])
+
+  const showModalError = (key) => Boolean((submitAttempted || touched?.[key]) && modalErrors?.[key])
 
   const columns = [
     {
@@ -209,9 +234,9 @@ function PackagesPage() {
           <Button
             type="text"
             danger
-            aria-label="Xoá gói"
+            aria-label="Tắt hoạt động gói"
             onClick={() => handleDelete(row)}
-            icon={<span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1 }}>delete</span>}
+            icon={<span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1 }}>power_settings_new</span>}
           />
         </Space>
       )
@@ -259,10 +284,8 @@ function PackagesPage() {
       is_active: Boolean(form.is_active)
     }
 
-    if (!payload.name) {
-      toast.error('Vui lòng nhập tên gói')
-      return
-    }
+    setSubmitAttempted(true)
+    if (Object.keys(modalErrors || {}).length) return
 
     setSaving(true)
 
@@ -272,11 +295,25 @@ function PackagesPage() {
 
       if (error) {
         console.error(error)
-        toast.error(error.message || 'Không thể tạo gói')
+        Modal.error({
+          title: 'Không thể tạo gói',
+          content: error.message || 'Vui lòng thử lại.',
+          centered: true,
+          icon: (
+            <span className="material-symbols-rounded">error</span>
+          )
+        })
         return
       }
 
-      toast.success('Đã tạo gói chụp')
+      Modal.success({
+        title: 'Tạo gói thành công',
+        content: 'Gói chụp đã được thêm vào hệ thống.',
+        centered: true,
+        icon: (
+          <span className="material-symbols-rounded">check_circle</span>
+        )
+      })
       closeModal()
       await fetchPackages()
       return
@@ -285,7 +322,14 @@ function PackagesPage() {
     const id = activeRow?.id
     if (!id) {
       setSaving(false)
-      toast.error('Không tìm thấy ID gói để cập nhật')
+      Modal.error({
+        title: 'Không thể cập nhật gói',
+        content: 'Không tìm thấy ID gói để cập nhật.',
+        centered: true,
+        icon: (
+          <span className="material-symbols-rounded">error</span>
+        )
+      })
       return
     }
 
@@ -294,11 +338,25 @@ function PackagesPage() {
 
     if (error) {
       console.error(error)
-      toast.error(error.message || 'Không thể cập nhật gói')
+      Modal.error({
+        title: 'Không thể cập nhật gói',
+        content: error.message || 'Vui lòng thử lại.',
+        centered: true,
+        icon: (
+          <span className="material-symbols-rounded">error</span>
+        )
+      })
       return
     }
 
-    toast.success('Đã cập nhật gói chụp')
+    Modal.success({
+      title: 'Cập nhật thành công',
+      content: 'Gói chụp đã được lưu.',
+      centered: true,
+      icon: (
+        <span className="material-symbols-rounded">check_circle</span>
+      )
+    })
     closeModal()
     await fetchPackages()
   }
@@ -308,20 +366,21 @@ function PackagesPage() {
     if (!id) return
 
     Modal.confirm({
-      title: 'Xoá gói chụp?',
-      content: 'Hành động này không thể hoàn tác.',
-      okText: 'Xoá',
+      title: 'Tắt hoạt động gói chụp?',
+      content: 'Gói sẽ bị ẩn khỏi danh sách chọn khi tạo booking. Bạn có thể bật lại trong phần sửa gói.',
+      centered: true,
+      okText: 'Tắt',
       okButtonProps: { danger: true },
-      cancelText: 'Huỷ',
+      cancelText: 'Giữ',
       onOk: async () => {
-        const { error } = await deletePackage(id)
+        const { error } = await updatePackage(id, { is_active: false })
         if (error) {
           console.error(error)
-          toast.error(error.message || 'Không thể xoá gói')
+          toast.error(error.message || 'Không thể tắt hoạt động gói')
           return
         }
 
-        toast.success('Đã xoá gói chụp')
+        toast.success('Đã tắt hoạt động gói chụp')
         await fetchPackages()
       }
     })
@@ -332,20 +391,21 @@ function PackagesPage() {
     if (!id) return
 
     Modal.confirm({
-      title: 'Xoá gói chụp?',
-      content: 'Hành động này không thể hoàn tác.',
-      okText: 'Xoá',
+      title: 'Tắt hoạt động gói chụp?',
+      content: 'Gói sẽ bị ẩn khỏi danh sách chọn khi tạo booking. Bạn có thể bật lại bất cứ lúc nào.',
+      centered: true,
+      okText: 'Tắt',
       okButtonProps: { danger: true },
-      cancelText: 'Huỷ',
+      cancelText: 'Giữ',
       onOk: async () => {
-        const { error } = await deletePackage(id)
+        const { error } = await updatePackage(id, { is_active: false })
         if (error) {
           console.error(error)
-          toast.error(error.message || 'Không thể xoá gói')
+          toast.error(error.message || 'Không thể tắt hoạt động gói')
           return
         }
 
-        toast.success('Đã xoá gói chụp')
+        toast.success('Đã tắt hoạt động gói chụp')
         closeModal()
         await fetchPackages()
       }
@@ -427,7 +487,7 @@ function PackagesPage() {
           <div className="cv-modalFooterGrid">
             {modalMode === 'edit' ? (
               <Button danger onClick={handleDeleteFromModal} disabled={saving} block style={{ gridColumn: 'span 12' }}>
-                Xoá gói
+                Tắt hoạt động
               </Button>
             ) : null}
             <Button onClick={requestCloseModal} disabled={saving} block>
@@ -451,8 +511,13 @@ function PackagesPage() {
                     <Input
                       placeholder="Ví dụ: Gói Newborn"
                       value={form.name}
-                      onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                      status={showModalError('name') ? 'error' : ''}
+                      onChange={(e) => {
+                        setTouched((p) => ({ ...p, name: true }))
+                        setForm((p) => ({ ...p, name: e.target.value }))
+                      }}
                     />
+                    {showModalError('name') ? <div className="cv-fieldErrorText">{modalErrors.name}</div> : null}
                   </div>
                 </div>
 
@@ -461,13 +526,19 @@ function PackagesPage() {
                     <div className="cv-fieldLabel">Giá</div>
                     <InputNumber
                       min={0}
+                      max={CURRENCY_MAX}
                       step={50000}
                       value={toNumber(form.price)}
                       formatter={formatWithCommas}
                       parser={parseCommas}
-                      onChange={(v) => setForm((p) => ({ ...p, price: toNumber(v) }))}
+                      status={showModalError('price') ? 'error' : ''}
+                      onChange={(v) => {
+                        setTouched((p) => ({ ...p, price: true }))
+                        setForm((p) => ({ ...p, price: toNumber(v) }))
+                      }}
                       style={{ width: '100%' }}
                     />
+                    {showModalError('price') ? <div className="cv-fieldErrorText">{modalErrors.price}</div> : null}
                   </div>
                 </div>
 

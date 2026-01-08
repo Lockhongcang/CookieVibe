@@ -31,7 +31,7 @@ export default function TopPackagesDonutChart({ data = [], loading = false }) {
 
   const formatVndCompact = (value) => {
     const number = toNumber(value)
-    return `${new Intl.NumberFormat('vi-VN', { notation: 'compact', maximumFractionDigits: 0 }).format(number)} ₫`
+    return `${new Intl.NumberFormat('vi-VN', { notation: 'compact', maximumFractionDigits: 0 }).format(number)} VNĐ`
   }
 
   return (

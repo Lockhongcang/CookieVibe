@@ -76,9 +76,30 @@
   min-width: 0;
 }
 
-.cv-invoiceFilters .ant-input-search-button,
-.cv-invoiceFilters .ant-input-search-button.ant-btn {
-  height: 32px;
+/* Keep all filter controls aligned like Input */
+.cv-invoiceFilters .ant-picker,
+.cv-invoiceFilters .ant-picker-range,
+.cv-invoiceFilters .ant-select .ant-select-selector,
+.cv-invoiceFilters .ant-input,
+.cv-invoiceFilters .ant-input-affix-wrapper,
+.cv-invoiceFilters .ant-input-search :where(.ant-input-search-button,
+  .ant-btn.ant-input-search-button,
+  .ant-btn.ant-input-search-btn,
+  .ant-input-search-btn) {
+  height: 40px !important;
+  min-height: 40px !important;
+}
+
+.cv-invoiceFilters .ant-picker,
+.cv-invoiceFilters .ant-picker-range {
+  padding: 0 12px !important;
+  display: flex;
+  align-items: center;
+}
+
+.cv-invoiceFilters .ant-picker-input > input {
+  height: 38px !important;
+  line-height: 38px !important;
 }
 
 .cv-invoiceFilters .ant-input-search .ant-input-group-addon {

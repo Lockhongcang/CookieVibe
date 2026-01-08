@@ -21,6 +21,9 @@ import '../styles/pages/calendar.css'
 
 const NOTE_STATUSES = new Set(['todo', 'completed'])
 
+const DAY_BOOKING_LIMIT = 2
+const DAY_NOTE_LIMIT = 1
+
 const formatWeekdayHeader = (date) => {
   const d = date instanceof Date ? date : new Date(date)
   const dow = d.getDay() // 0..6 (Sun..Sat)
@@ -28,7 +31,7 @@ const formatWeekdayHeader = (date) => {
   return `T${dow + 1}`
 }
 
-export default function CalendarPage({ onOpenInvoice }) {
+export default function CalendarPage({ onOpenInvoice, autoOpenBookingId, onAutoOpenConsumed }) {
   const [bookings, setBookings] = useState([])
   const [notes, setNotes] = useState([])
   const [packages, setPackages] = useState([])
@@ -57,7 +60,12 @@ export default function CalendarPage({ onOpenInvoice }) {
 
   const calendarRef = useRef(null)
   const calendarWrapRef = useRef(null)
-  const [isMobile, setIsMobile] = useState(false)
+  // Responsive behavior:
+  // - >= 1800px: show event chips + right panel
+  // - 1200-1799px: show event dots + right panel
+  // - < 1200px: show dots + hide right panel (use day-sheet)
+  const [isPhone, setIsPhone] = useState(false)
+  const [isDotMonth, setIsDotMonth] = useState(false)
 
   const [currentViewType, setCurrentViewType] = useState('dayGridMonth')
 
@@ -69,9 +77,24 @@ export default function CalendarPage({ onOpenInvoice }) {
   const [selectedItemId, setSelectedItemId] = useState(null)
 
   useEffect(() => {
-    const mq = window.matchMedia?.('(max-width: 1900px)')
+    const mq = window.matchMedia?.('(max-width: 1199px)')
     if (!mq) return
-    const sync = () => setIsMobile(Boolean(mq.matches))
+    const sync = () => setIsPhone(Boolean(mq.matches))
+    sync()
+
+    if (mq.addEventListener) mq.addEventListener('change', sync)
+    else mq.addListener(sync)
+
+    return () => {
+      if (mq.removeEventListener) mq.removeEventListener('change', sync)
+      else mq.removeListener(sync)
+    }
+  }, [])
+
+  useEffect(() => {
+    const mq = window.matchMedia?.('(max-width: 1799px)')
+    if (!mq) return
+    const sync = () => setIsDotMonth(Boolean(mq.matches))
     sync()
 
     if (mq.addEventListener) mq.addEventListener('change', sync)
@@ -99,6 +122,36 @@ export default function CalendarPage({ onOpenInvoice }) {
   }
 
   const toDayKey = (date) => (date ? dayjs(date).format('YYYY-MM-DD') : '')
+
+  const dayCountsByKey = useMemo(() => {
+    const map = {}
+
+    for (const b of bookings || []) {
+      const rawStatus = String(b?.status || 'scheduled')
+      if (rawStatus === 'canceled') continue
+      const key = b?.start_datetime ? dayjs(b.start_datetime).format('YYYY-MM-DD') : ''
+      if (!key) continue
+      map[key] = map[key] || { bookingCount: 0, noteCount: 0 }
+      map[key].bookingCount += 1
+    }
+
+    for (const n of notes || []) {
+      const key = String(n?.date || '').slice(0, 10)
+      if (!key) continue
+      map[key] = map[key] || { bookingCount: 0, noteCount: 0 }
+      map[key].noteCount += 1
+    }
+
+    return map
+  }, [bookings, notes])
+
+  const getDayCounts = useCallback(
+    (dayKey) => {
+      const key = String(dayKey || '').trim()
+      return dayCountsByKey?.[key] || { bookingCount: 0, noteCount: 0 }
+    },
+    [dayCountsByKey]
+  )
 
   const packageOptions = useMemo(() => {
     const list = Array.isArray(packages) ? packages : []
@@ -199,7 +252,55 @@ export default function CalendarPage({ onOpenInvoice }) {
   }, [])
 
   const events = useMemo(() => {
-    const bookingEvents = (bookings || []).map(mapBookingToEvent)
+    // Booking display rule:
+    // - Active bookings (non-canceled) always show.
+    // - Canceled bookings are only shown if there is remaining capacity in the day.
+    //   (e.g. limit=2, if 2 active => show 0 canceled; if 1 active => show 1 canceled).
+    const list = Array.isArray(bookings) ? bookings : []
+    const byDay = new Map()
+    const withoutDay = []
+
+    for (const b of list) {
+      const startIso = b?.start_datetime
+      const key = startIso ? dayjs(startIso).format('YYYY-MM-DD') : ''
+      if (!key) {
+        withoutDay.push(b)
+        continue
+      }
+      if (!byDay.has(key)) byDay.set(key, [])
+      byDay.get(key).push(b)
+    }
+
+    const filteredBookings = []
+    for (const [, dayList] of byDay.entries()) {
+      const active = []
+      const canceled = []
+      for (const b of dayList) {
+        const rawStatus = String(b?.status || 'scheduled')
+        if (rawStatus === 'canceled') canceled.push(b)
+        else active.push(b)
+      }
+
+      const sortByStart = (a, b) => {
+        const av = a?.start_datetime ? dayjs(a.start_datetime).valueOf() : 0
+        const bv = b?.start_datetime ? dayjs(b.start_datetime).valueOf() : 0
+        return av - bv
+      }
+      active.sort(sortByStart)
+      canceled.sort(sortByStart)
+
+      const remainingSlots = Math.max(0, DAY_BOOKING_LIMIT - active.length)
+      filteredBookings.push(...active, ...canceled.slice(0, remainingSlots))
+    }
+
+    filteredBookings.push(...withoutDay)
+    filteredBookings.sort((a, b) => {
+      const av = a?.start_datetime ? dayjs(a.start_datetime).valueOf() : 0
+      const bv = b?.start_datetime ? dayjs(b.start_datetime).valueOf() : 0
+      return av - bv
+    })
+
+    const bookingEvents = filteredBookings.map(mapBookingToEvent)
     const noteEvents = (notes || []).map(mapNoteToEvent)
     return [...bookingEvents, ...noteEvents]
   }, [bookings, notes, mapBookingToEvent, mapNoteToEvent])
@@ -318,9 +419,18 @@ export default function CalendarPage({ onOpenInvoice }) {
     setModalOpen(true)
   }, [])
 
+  useEffect(() => {
+    if (!autoOpenBookingId) return
+    const list = Array.isArray(bookings) ? bookings : []
+    const found = list.find((b) => b?.id === autoOpenBookingId) || null
+    if (!found) return
+    openBooking(found)
+    onAutoOpenConsumed?.()
+  }, [autoOpenBookingId, bookings, onAutoOpenConsumed, openBooking])
+
   const handleEventClick = (info) => {
     // Mobile month: do not open details directly; go through day-sheet modal.
-    if (isMobile && info?.view?.type === 'dayGridMonth') {
+    if (isPhone && info?.view?.type === 'dayGridMonth') {
       const d = info?.event?.start
       if (d) openDaySheet(d)
       return
@@ -349,6 +459,23 @@ export default function CalendarPage({ onOpenInvoice }) {
     if (!start) return
 
     const safeEnd = end || new Date(start.getTime() + 60 * 60 * 1000)
+
+    // Enforce day booking limit when moving/resizing across days.
+    const targetKey = dayjs(start).format('YYYY-MM-DD')
+    const otherCountSameDay = (bookings || []).filter((b) => {
+      if (!b) return false
+      const rawStatus = String(b?.status || 'scheduled')
+      if (rawStatus === 'canceled') return false
+      if (b?.id === booking?.id) return false
+      const key = b?.start_datetime ? dayjs(b.start_datetime).format('YYYY-MM-DD') : ''
+      return key === targetKey
+    }).length
+
+    if (otherCountSameDay >= DAY_BOOKING_LIMIT) {
+      toast.info(`Ngày ${dayjs(start).format('DD/MM')} chỉ được tối đa ${DAY_BOOKING_LIMIT} lịch chụp`)
+      info?.revert?.()
+      return
+    }
 
     setActionLoading(true)
     const { error } = await updateBooking(booking.id, {
@@ -456,6 +583,14 @@ export default function CalendarPage({ onOpenInvoice }) {
 
   const openCreateAt = (start, end) => {
     if (!start) return
+
+    const dayKey = toDayKey(start)
+    const counts = getDayCounts(dayKey)
+    if ((counts?.bookingCount || 0) >= DAY_BOOKING_LIMIT) {
+      toast.info(`Ngày này đã đủ ${DAY_BOOKING_LIMIT} lịch chụp`)
+      return
+    }
+
     setSelectedRange({ start, end })
     setCreateOpen(true)
   }
@@ -475,7 +610,7 @@ export default function CalendarPage({ onOpenInvoice }) {
     const viewType = info?.view?.type
     const date = info?.date
 
-    if (isMobile && viewType === 'dayGridMonth') {
+    if (isPhone && viewType === 'dayGridMonth') {
       if (!date) return
       openDaySheet(date)
       return
@@ -494,7 +629,8 @@ export default function CalendarPage({ onOpenInvoice }) {
       setSelectedItemId(null)
     }
 
-    // Only used for touch devices; desktop uses the hover + button.
+    // Only used for touch devices on small screens; >=1200 uses in-cell buttons or right panel.
+    if (!isPhone) return
     if (!isTouch) return
     if (!date) return
     handleAddForDay(date)
@@ -502,6 +638,13 @@ export default function CalendarPage({ onOpenInvoice }) {
 
   const openCreateNoteAt = (date) => {
     const start = date ? dayjs(date) : dayjs()
+    const key = start.format('YYYY-MM-DD')
+    const counts = getDayCounts(key)
+    if ((counts?.noteCount || 0) >= DAY_NOTE_LIMIT) {
+      toast.info(`Ngày này chỉ được ${DAY_NOTE_LIMIT} note`)
+      return
+    }
+
     const nextForm = {
       date: start.format('YYYY-MM-DD'),
       time: start.format('HH:mm'),
@@ -545,14 +688,23 @@ export default function CalendarPage({ onOpenInvoice }) {
     await refreshNotesInCurrentRange()
   }
 
-  const dayCellContent = (arg) => (
-    <CalendarDayCellHeader
-      dayNumberText={arg.dayNumberText}
-      date={arg.date}
-      onAddNote={(d) => handleAddNoteForDay(d)}
-      onAddBooking={(d) => handleAddForDay(d)}
-    />
-  )
+  const dayCellContent = (arg) => {
+    const key = toDayKey(arg?.date)
+    const counts = getDayCounts(key)
+    const disableAddBooking = (counts?.bookingCount || 0) >= DAY_BOOKING_LIMIT
+    const disableAddNote = (counts?.noteCount || 0) >= DAY_NOTE_LIMIT
+
+    return (
+      <CalendarDayCellHeader
+        dayNumberText={arg.dayNumberText}
+        date={arg.date}
+        disableAddBooking={disableAddBooking}
+        disableAddNote={disableAddNote}
+        onAddNote={(d) => handleAddNoteForDay(d)}
+        onAddBooking={(d) => handleAddForDay(d)}
+      />
+    )
+  }
 
   const eventClassNames = useCallback(
     (arg) => {
@@ -561,8 +713,8 @@ export default function CalendarPage({ onOpenInvoice }) {
 
       const isSelected = selectedItemId && String(arg?.event?.id) === String(selectedItemId)
 
-      // Mobile month: render events as colored dots (max handled by dayMaxEvents + "+n more").
-      if (isMobile && viewType === 'dayGridMonth') {
+      // Compact month: render events as colored dots (max handled by dayMaxEvents + "+n more").
+      if (isDotMonth && viewType === 'dayGridMonth') {
         if (type === 'booking') {
           const status = String(arg?.event?.extendedProps?.displayStatus || 'scheduled')
           return ['cv-calDot', 'cv-calDot--booking', `status-${status}`, ...(isSelected ? ['cv-event--selected'] : [])]
@@ -591,21 +743,19 @@ export default function CalendarPage({ onOpenInvoice }) {
 
       return isSelected ? ['cv-event--selected'] : []
     },
-    [isMobile, selectedItemId]
+    [isDotMonth, selectedItemId]
   )
 
   const renderEventContent = useCallback(
     (info) => {
-      // Mobile month: dot indicators only (no chip markup).
-      if (isMobile && info?.view?.type === 'dayGridMonth') return <span />
+      // Compact month: dot indicators only (no chip markup).
+      if (isDotMonth && info?.view?.type === 'dayGridMonth') return <span />
       return (
         <CalendarEventContent info={info} />
       )
     },
-    [isMobile]
+    [isDotMonth]
   )
-
-  const isMonthView = useMemo(() => currentViewType === 'dayGridMonth', [currentViewType])
 
   const daySheetItems = useMemo(() => {
     if (!daySheetDate) return []
@@ -613,23 +763,12 @@ export default function CalendarPage({ onOpenInvoice }) {
   }, [daySheetDate, getItemsForDay])
 
   const daySheetCounts = useMemo(() => {
-    let bookingCount = 0
-    let noteCount = 0
-    for (const it of daySheetItems) {
-      if (it?.type === 'booking') {
-        const rawStatus = String(it?.raw?.status || 'scheduled')
-        if (rawStatus !== 'canceled') bookingCount += 1
-      }
-      if (it?.type === 'note') {
-        const rawStatus = String(it?.raw?.status || 'todo')
-        if (rawStatus !== 'completed') noteCount += 1
-      }
-    }
-    return { bookingCount, noteCount }
-  }, [daySheetItems])
+    if (!daySheetDate) return { bookingCount: 0, noteCount: 0 }
+    return getDayCounts(daySheetDate)
+  }, [daySheetDate, getDayCounts])
 
-  const canAddBookingInDaySheet = daySheetCounts.bookingCount < 2
-  const canAddNoteInDaySheet = daySheetCounts.noteCount < 1
+  const canAddBookingInDaySheet = daySheetCounts.bookingCount < DAY_BOOKING_LIMIT
+  const canAddNoteInDaySheet = daySheetCounts.noteCount < DAY_NOTE_LIMIT
   const showDaySheetActions = canAddBookingInDaySheet || canAddNoteInDaySheet
 
   const handleOpenDaySheetItem = useCallback(
@@ -684,17 +823,23 @@ export default function CalendarPage({ onOpenInvoice }) {
       return invoicesByBookingId?.[bookingId] ? acc + 1 : acc
     }, 0)
 
-    // Visual-only: keep consistent with existing day-sheet booking limit.
-    const bookingLimit = 2
+    const bookingLimit = DAY_BOOKING_LIMIT
+    const noteLimit = DAY_NOTE_LIMIT
     const availableSlots = Math.max(bookingLimit - bookingCount, 0)
+
+    const noteCount = (notes || []).filter((n) => String(n?.date || '').slice(0, 10) === String(selectedDayKey || '')).length
+    const availableNotes = Math.max(noteLimit - noteCount, 0)
 
     return {
       totalEvents: activeItems.length,
       invoiceCount,
       availableSlots,
-      bookingLimit
+      bookingLimit,
+      noteCount,
+      noteLimit,
+      availableNotes
     }
-  }, [selectedDayItems, invoicesByBookingId])
+  }, [notes, selectedDayItems, selectedDayKey, invoicesByBookingId])
 
   const upcomingToday = useMemo(() => {
     if (!selectedDayHeader?.isToday) return null
@@ -794,7 +939,7 @@ export default function CalendarPage({ onOpenInvoice }) {
                   initialView="dayGridMonth"
                   locale={viLocale}
                   headerToolbar={
-                    isMobile
+                    isPhone
                       ? { left: 'title', center: 'prev,next', right: '' }
                       : { left: 'title prev,next', right: 'today dayGridMonth,timeGridWeek' }
                   }
@@ -820,8 +965,11 @@ export default function CalendarPage({ onOpenInvoice }) {
                   }}
                   dayCellClassNames={(arg) => {
                     const key = toDayKey(arg?.date)
-                    if (key && selectedDayKey && key === selectedDayKey) return ['cv-day--selected']
-                    return []
+                    const out = []
+
+                    if (key && selectedDayKey && key === selectedDayKey) out.push('cv-day--selected')
+
+                    return out
                   }}
                   dayCellContent={dayCellContent}
                   dateClick={handleDateClick}
@@ -855,7 +1003,7 @@ export default function CalendarPage({ onOpenInvoice }) {
                   eventResizableFromStart
                   height="auto"
                   eventDisplay="block"
-                  dayMaxEvents={isMobile && isMonthView ? 3 : 3}
+                  dayMaxEvents={3}
                   allDaySlot={currentViewType === 'timeGridWeek' || currentViewType === 'timeGridDay'}
                   slotMinTime="06:00:00"
                   slotMaxTime="18:00:00"
@@ -878,7 +1026,7 @@ export default function CalendarPage({ onOpenInvoice }) {
               </div>
             </div>
 
-            {!isMobile ? (
+            {!isPhone ? (
               <aside className="cv-calendarSide" aria-label="Chi tiết ngày">
                 <div className="cv-calSideCard">
                 <div className="cv-calSideHeader">
@@ -952,6 +1100,7 @@ export default function CalendarPage({ onOpenInvoice }) {
                       const d = selectedDayKey ? dayjs(selectedDayKey).toDate() : new Date()
                       handleAddForDay(d)
                     }}
+                    disabled={selectedDayStats.availableSlots <= 0}
                     block
                   >
                     Thêm lịch
@@ -968,6 +1117,7 @@ export default function CalendarPage({ onOpenInvoice }) {
                       const d = selectedDayKey ? dayjs(selectedDayKey).toDate() : new Date()
                       handleAddNoteForDay(d)
                     }}
+                    disabled={selectedDayStats.availableNotes <= 0}
                     block
                   >
                     Thêm note
@@ -1239,6 +1389,9 @@ export default function CalendarPage({ onOpenInvoice }) {
       <BookingModal
         open={modalOpen}
         booking={selectedBooking}
+        invoice={selectedBooking?.id ? invoicesByBookingId?.[selectedBooking.id] : null}
+        existingBookings={bookings}
+        dayBookingLimit={DAY_BOOKING_LIMIT}
         packageOptions={packageOptions}
         confirmLoading={actionLoading}
         onClose={handleCloseModal}

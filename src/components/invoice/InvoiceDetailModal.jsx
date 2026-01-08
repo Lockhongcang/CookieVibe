@@ -8,6 +8,8 @@ import { toNumber } from '../../utils/number.js'
 
 const { Text } = Typography
 
+const CURRENCY_MAX = 10000000
+
 const normalizeInvoiceStatus = (status) => {
   // Backward compatibility: treat legacy 'paid' as 'completed' in UI.
   if (status === 'paid') return 'completed'
@@ -20,7 +22,7 @@ const toInt = (value, fallback = 0) => {
   return Math.round(n)
 }
 
-const formatVnd = (value) => `${toInt(value).toLocaleString('vi-VN')} đ`
+const formatVnd = (value) => `${toInt(value).toLocaleString('vi-VN')} VNĐ`
 
 const formatWithCommas = (value) => {
   if (value === null || value === undefined || value === '') return ''
@@ -218,14 +220,15 @@ export default function InvoiceDetailModal({ open, bookingId, onClose, onSaved }
       Modal.confirm({
         title: 'Huỷ thay đổi?'
         , content: 'Bạn có thay đổi chưa lưu. Nếu huỷ, dữ liệu sẽ bị mất.'
+        , centered: true
         , icon: (
-          <span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1 }}>
+          <span className="material-symbols-rounded">
             warning
           </span>
         )
-        , okText: 'Huỷ'
+        , okText: 'Bỏ'
         , okButtonProps: { danger: true }
-        , cancelText: 'Tiếp tục chỉnh'
+        , cancelText: 'Tiếp tục'
         , onOk: () => resolve(true)
         , onCancel: () => resolve(false)
       })
@@ -388,6 +391,7 @@ export default function InvoiceDetailModal({ open, bookingId, onClose, onSaved }
                   </div>
                   <InputNumber
                     min={0}
+                    max={CURRENCY_MAX}
                     step={10000}
                     value={form.base_price}
                     formatter={formatWithCommas}
@@ -404,6 +408,7 @@ export default function InvoiceDetailModal({ open, bookingId, onClose, onSaved }
                   <div className="cv-fieldLabel">Tiền cọc</div>
                   <InputNumber
                     min={0}
+                    max={CURRENCY_MAX}
                     step={10000}
                     value={form.deposit}
                     formatter={formatWithCommas}
@@ -420,6 +425,7 @@ export default function InvoiceDetailModal({ open, bookingId, onClose, onSaved }
                   <div className="cv-fieldLabel">Make up</div>
                   <InputNumber
                     min={0}
+                    max={CURRENCY_MAX}
                     step={10000}
                     value={makeupDisabled ? 0 : form.makeup_fee}
                     formatter={formatWithCommas}
@@ -439,6 +445,7 @@ export default function InvoiceDetailModal({ open, bookingId, onClose, onSaved }
                   <div className="cv-fieldLabel">Phụ thu</div>
                   <InputNumber
                     min={0}
+                    max={CURRENCY_MAX}
                     step={10000}
                     value={form.extra_fee}
                     formatter={formatWithCommas}
@@ -465,6 +472,7 @@ export default function InvoiceDetailModal({ open, bookingId, onClose, onSaved }
                       <div className="cv-fieldLabel">Tip</div>
                       <InputNumber
                         min={0}
+                        max={CURRENCY_MAX}
                         step={10000}
                         value={form.tip}
                         formatter={formatWithCommas}
@@ -496,6 +504,7 @@ export default function InvoiceDetailModal({ open, bookingId, onClose, onSaved }
                       <div className="cv-fieldLabel">Phạt</div>
                       <InputNumber
                         min={0}
+                        max={CURRENCY_MAX}
                         step={10000}
                         value={form.penalty_fee}
                         formatter={formatWithCommas}

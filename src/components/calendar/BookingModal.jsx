@@ -1,21 +1,67 @@
 import dayjs from 'dayjs'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Button, DatePicker, Input, InputNumber, Modal, Select, TimePicker, Typography } from 'antd'
 import { toast } from 'react-toastify'
 import { toNumber } from '../../utils/number.js'
 import { updateBooking } from '../../services/booking.service'
+import { createInvoice, getInvoiceByBookingId, updateInvoice } from '../../services/invoice.service'
 
 const DEFAULT_DURATION_MINUTES = 60
 
-const isValidVnPhone = (value) => {
-  if (!value) return true
-  const normalized = String(value).trim().replace(/[\s.-]/g, '')
-  return /^(?:\+?84|0)\d{9,10}$/.test(normalized)
+const CURRENCY_MIN = 1000
+const CURRENCY_MAX = 10000000
+
+const toInt = (value, fallback = 0) => {
+  const n = toNumber(value, fallback)
+  if (!Number.isFinite(n)) return fallback
+  return Math.round(n)
+}
+
+const formatWithCommas = (value) => {
+  if (value === null || value === undefined || value === '') return ''
+  const raw = String(value)
+
+  const sign = raw.startsWith('-') ? '-' : ''
+  const unsigned = sign ? raw.slice(1) : raw
+  const [intPart, decPart] = unsigned.split('.')
+  const formattedInt = String(intPart || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+
+  if (decPart !== undefined && decPart !== '') return `${sign}${formattedInt}.${decPart}`
+  return `${sign}${formattedInt}`
+}
+
+const parseCommas = (value) => {
+  if (value === null || value === undefined) return ''
+  return String(value)
+    .replace(/[,\s]/g, '')
+    .replace(/[^\d.-]/g, '')
+}
+
+const normalizeInvoiceStatus = (status) => {
+  // Backward compatibility: treat legacy 'paid' as 'completed' in UI.
+  if (status === 'paid') return 'completed'
+  return status
+}
+
+const normalizeToVnPhone10 = (value) => {
+  const digits = String(value || '').replace(/\D/g, '')
+  if (!digits) return ''
+  if (digits.startsWith('84') && digits.length === 11) return `0${digits.slice(2)}`
+  return digits
+}
+
+const isValidVnPhone10Digits = (value) => {
+  if (!value) return false
+  const normalized = normalizeToVnPhone10(value)
+  return /^0\d{9}$/.test(normalized)
 }
 
 export default function BookingModal({
   open,
   booking,
+  invoice,
+  existingBookings = [],
+  dayBookingLimit = 2,
   packageOptions = [],
   onClose,
   onUpdated,
@@ -30,6 +76,9 @@ export default function BookingModal({
       key={key}
       open={open}
       booking={booking}
+      invoice={invoice}
+      existingBookings={existingBookings}
+      dayBookingLimit={dayBookingLimit}
       packageOptions={packageOptions}
       onClose={onClose}
       onUpdated={onUpdated}
@@ -44,6 +93,9 @@ export default function BookingModal({
 function BookingModalInner({
   open,
   booking,
+  invoice,
+  existingBookings = [],
+  dayBookingLimit = 2,
   packageOptions = [],
   onClose,
   onUpdated,
@@ -52,6 +104,8 @@ function BookingModalInner({
   onOpenInvoice
 }) {
   const [saving, setSaving] = useState(false)
+  const [submitAttempted, setSubmitAttempted] = useState(false)
+  const [touched, setTouched] = useState({})
 
   const isCompleted = booking?.status === 'completed'
   const isCancelled = booking?.status === 'canceled'
@@ -72,11 +126,19 @@ function BookingModalInner({
       start_time: safeStart.format('HH:mm'),
       end_time: safeEnd.format('HH:mm'),
       people_count: toNumber(booking?.people_count) || 1,
-      note: booking?.note ?? ''
+      note: booking?.note ?? '',
+      price: invoice?.total_amount ?? booking?.packages?.price ?? null,
+      deposit: invoice?.deposit ?? 0
     }
   })
 
   const [form, setForm] = useState(initialSnapshot)
+
+  useEffect(() => {
+    if (!open) return
+    setSubmitAttempted(false)
+    setTouched({})
+  }, [open])
 
   const isDirty = useMemo(() => {
     const baseline = {
@@ -88,7 +150,9 @@ function BookingModalInner({
       start_time: String(initialSnapshot.start_time || '').trim(),
       end_time: String(initialSnapshot.end_time || '').trim(),
       people_count: toNumber(initialSnapshot.people_count) || 1,
-      note: String(initialSnapshot.note || '')
+      note: String(initialSnapshot.note || ''),
+      price: initialSnapshot.price === null || initialSnapshot.price === undefined ? null : toInt(initialSnapshot.price),
+      deposit: initialSnapshot.deposit === null || initialSnapshot.deposit === undefined ? 0 : toInt(initialSnapshot.deposit)
     }
 
     const current = {
@@ -100,7 +164,9 @@ function BookingModalInner({
       start_time: String(form.start_time || '').trim(),
       end_time: String(form.end_time || '').trim(),
       people_count: toNumber(form.people_count) || 1,
-      note: String(form.note || '')
+      note: String(form.note || ''),
+      price: form.price === null || form.price === undefined ? null : toInt(form.price),
+      deposit: form.deposit === null || form.deposit === undefined ? 0 : toInt(form.deposit)
     }
 
     return JSON.stringify(baseline) !== JSON.stringify(current)
@@ -115,14 +181,15 @@ function BookingModalInner({
       Modal.confirm({
         title: 'Huỷ thay đổi?'
         , content: 'Bạn có thay đổi chưa lưu. Nếu huỷ, dữ liệu sẽ bị mất.'
+        , centered: true
         , icon: (
-          <span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1 }}>
+          <span className="material-symbols-rounded">
             warning
           </span>
         )
-        , okText: 'Huỷ'
+        , okText: 'Bỏ'
         , okButtonProps: { danger: true }
-        , cancelText: 'Tiếp tục chỉnh'
+        , cancelText: 'Tiếp tục'
         , onOk: () => resolve(true)
         , onCancel: () => resolve(false)
       })
@@ -141,14 +208,134 @@ function BookingModalInner({
   const selectedPackage = (packageOptions || []).find((p) => p?.value === form.package_id) || null
   const showPeopleCount = selectedPackage?.label === 'Cookie Nhiều mình'
 
+  const invoiceStatus = useMemo(() => {
+    return normalizeInvoiceStatus(invoice?.status) || 'draft'
+  }, [invoice?.status])
+
+  const isPaidLike = useMemo(() => {
+    return invoiceStatus === 'paid' || invoiceStatus === 'completed'
+  }, [invoiceStatus])
+
+  const errors = useMemo(() => {
+    const out = {}
+
+    const name = String(form.customer_name || '').trim()
+    if (!name) out.customer_name = 'Vui lòng nhập tên khách hàng'
+
+    if (!form.package_id) out.package_id = 'Vui lòng chọn gói chụp'
+
+    const phone = String(form.customer_phone || '').trim()
+    if (phone && !isValidVnPhone10Digits(phone)) out.customer_phone = 'Số điện thoại phải đủ 10 số'
+
+    const start = dayjs(`${form.start_date}T${form.start_time}`)
+    const end = dayjs(`${form.start_date}T${form.end_time}`)
+    if (!start.isValid() || !end?.isValid()) out.timeRange = 'Vui lòng nhập ngày/giờ hợp lệ'
+    else if (!end.isAfter(start)) out.timeRange = 'Giờ kết thúc phải sau giờ bắt đầu'
+
+    const totalAmount = form.price === null || form.price === undefined ? NaN : toInt(form.price, NaN)
+    const deposit = form.deposit === null || form.deposit === undefined ? 0 : toInt(form.deposit, 0)
+
+    if (Number.isFinite(totalAmount)) {
+      if (totalAmount > 0 && totalAmount < CURRENCY_MIN) out.price = `Giá phải = 0 hoặc ≥ ${CURRENCY_MIN.toLocaleString('vi-VN')}`
+      else if (totalAmount > CURRENCY_MAX) out.price = `Giá không được lớn hơn ${CURRENCY_MAX.toLocaleString('vi-VN')}`
+    }
+
+    if (deposit < 0) out.deposit = 'Tiền cọc không hợp lệ'
+    else if (deposit > 0 && deposit < CURRENCY_MIN) out.deposit = `Tiền cọc phải = 0 hoặc ≥ ${CURRENCY_MIN.toLocaleString('vi-VN')}`
+    else if (deposit > CURRENCY_MAX) out.deposit = `Tiền cọc không được lớn hơn ${CURRENCY_MAX.toLocaleString('vi-VN')}`
+    else if (Number.isFinite(totalAmount) && deposit > totalAmount) out.deposit = 'Tiền cọc không được lớn hơn giá'
+
+    return out
+  }, [form])
+
+  const showError = (key) => Boolean((submitAttempted || touched?.[key]) && errors?.[key])
+
+  const formatVndOrDash = (value) => {
+    if (value === null || value === undefined || value === '') return '--'
+    const n = toNumber(value, NaN)
+    if (!Number.isFinite(n)) return '--'
+    return `${n.toLocaleString('vi-VN')} VNĐ`
+  }
+
+  const displayPrice = useMemo(() => {
+    // Prefer invoice total (if any), otherwise use package price.
+    const invTotal = invoice?.total_amount
+    if (invTotal !== null && invTotal !== undefined) return invTotal
+
+    const pkgPrice = selectedPackage?.price
+    if (pkgPrice !== null && pkgPrice !== undefined) return pkgPrice
+
+    const joinedPkgPrice = booking?.packages?.price
+    if (joinedPkgPrice !== null && joinedPkgPrice !== undefined) return joinedPkgPrice
+
+    return null
+  }, [invoice?.total_amount, selectedPackage?.price, booking?.packages?.price])
+
+  const displayDeposit = useMemo(() => {
+    return invoice?.deposit ?? null
+  }, [invoice?.deposit])
+
+  const upsertInvoiceForBooking = async (bookingRow) => {
+    const bookingId = bookingRow?.id
+    if (!bookingId) return { error: { message: 'Thiếu booking_id' } }
+
+    const totalAmount = form.price === null || form.price === undefined
+      ? null
+      : toInt(form.price, NaN)
+    const deposit = form.deposit === null || form.deposit === undefined
+      ? 0
+      : toInt(form.deposit, 0)
+
+    const payload = {
+      booking_id: bookingId,
+      package_id: form.package_id,
+      ...(Number.isFinite(totalAmount) ? { base_price: totalAmount, total_amount: totalAmount } : {}),
+      deposit: isPaidLike ? 0 : deposit
+    }
+
+    // Try to update trigger-created invoice (or existing), otherwise create.
+    let lastErr = null
+    for (let i = 0; i < 2; i++) {
+      // eslint-disable-next-line no-await-in-loop
+      const { data: inv, error: invErr } = await getInvoiceByBookingId(bookingId)
+      if (!invErr && inv?.id) {
+        return await updateInvoice(inv.id, payload)
+      }
+      lastErr = invErr
+      // eslint-disable-next-line no-await-in-loop
+      await new Promise((r) => setTimeout(r, 250))
+    }
+
+    return await createInvoice({ ...payload, status: 'draft' })
+  }
+
   const handleSave = async () => {
     if (!booking) return
     if (!canEdit) return
 
+    setSubmitAttempted(true)
+    if (Object.keys(errors || {}).length) return
+
     const start = dayjs(`${form.start_date}T${form.start_time}`)
     const end = dayjs(`${form.start_date}T${form.end_time}`)
-    if (!start.isValid() || !end.isValid()) return toast.error('Vui lòng nhập ngày/giờ hợp lệ')
-    if (!end.isAfter(start)) return toast.error('Giờ kết thúc phải sau giờ bắt đầu')
+    if (!start.isValid() || !end.isValid()) return
+    if (!end.isAfter(start)) return
+
+    // Enforce day booking limit when changing the booking date.
+    const targetKey = start.format('YYYY-MM-DD')
+    const otherCountSameDay = (existingBookings || []).filter((b) => {
+      if (!b) return false
+      const rawStatus = String(b?.status || 'scheduled')
+      if (rawStatus === 'canceled') return false
+      if (b?.id === booking?.id) return false
+      const key = b?.start_datetime ? dayjs(b.start_datetime).format('YYYY-MM-DD') : ''
+      return key === targetKey
+    }).length
+
+    if (otherCountSameDay >= dayBookingLimit) {
+      toast.info(`Ngày ${start.format('DD/MM')} chỉ được tối đa ${dayBookingLimit} lịch chụp`)
+      return
+    }
 
     const payload = {
       customer_name: String(form.customer_name || '').trim(),
@@ -161,10 +348,6 @@ function BookingModalInner({
       note: String(form.note || '')
     }
 
-    if (!payload.customer_name) return toast.error('Vui lòng nhập tên khách hàng')
-    if (!payload.package_id) return toast.error('Vui lòng chọn gói')
-    if (!isValidVnPhone(payload.customer_phone)) return toast.error('Số điện thoại không hợp lệ')
-
     setSaving(true)
     const { error } = await updateBooking(booking.id, payload)
     setSaving(false)
@@ -173,6 +356,32 @@ function BookingModalInner({
       console.error(error)
       toast.error(error.message || 'Không thể cập nhật booking')
       return
+    }
+
+    // Update invoice amounts (price/deposit) when changed.
+    const initialPrice = initialSnapshot.price === null || initialSnapshot.price === undefined
+      ? null
+      : toInt(initialSnapshot.price, NaN)
+    const currentPrice = form.price === null || form.price === undefined
+      ? null
+      : toInt(form.price, NaN)
+    const initialDeposit = initialSnapshot.deposit === null || initialSnapshot.deposit === undefined
+      ? 0
+      : toInt(initialSnapshot.deposit, 0)
+    const currentDeposit = form.deposit === null || form.deposit === undefined
+      ? 0
+      : toInt(form.deposit, 0)
+
+    const invoiceChanged = JSON.stringify({ package_id: initialSnapshot.package_id ?? null, price: initialPrice, deposit: initialDeposit }) !==
+      JSON.stringify({ package_id: form.package_id ?? null, price: currentPrice, deposit: currentDeposit })
+
+    const shouldUpsertInvoice = Boolean(form.package_id) && invoiceChanged
+    if (shouldUpsertInvoice) {
+      const { error: invErr } = await upsertInvoiceForBooking(booking)
+      if (invErr) {
+        console.error(invErr)
+        toast.error(invErr.message || 'Đã cập nhật booking nhưng không thể cập nhật hoá đơn')
+      }
     }
 
     toast.success('Cập nhật booking thành công')
@@ -189,15 +398,16 @@ function BookingModalInner({
     const ok = await new Promise((resolve) => {
       Modal.confirm({
         title: 'Huỷ lịch chụp?',
-        content: 'Bạn có chắc chắn muốn huỷ lịch chụp này không?',
+        content: 'Lịch chụp sẽ chuyển sang trạng thái đã huỷ.',
+        centered: true,
         icon: (
-          <span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1 }}>
+          <span className="material-symbols-rounded">
             warning
           </span>
         ),
-        okText: 'Huỷ lịch',
+        okText: 'Huỷ',
         okButtonProps: { danger: true },
-        cancelText: 'Đóng',
+        cancelText: 'Giữ',
         onOk: () => resolve(true),
         onCancel: () => resolve(false)
       })
@@ -288,6 +498,7 @@ function BookingModalInner({
                 allowClear={false}
                 disabled
                 inputReadOnly
+                getPopupContainer={(trigger) => trigger?.parentElement || document.body}
                 suffixIcon={(
                   <span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1 }}>
                     calendar_month
@@ -299,9 +510,13 @@ function BookingModalInner({
               <div className="cv-timeRangeRow">
                 <TimePicker
                   value={form.start_time ? dayjs(`2000-01-01T${form.start_time}`) : null}
-                  onChange={(d) => setForm((p) => ({ ...p, start_time: d ? dayjs(d).format('HH:mm') : '' }))}
+                  onChange={(d) => {
+                    setTouched((p) => ({ ...p, timeRange: true }))
+                    setForm((p) => ({ ...p, start_time: d ? dayjs(d).format('HH:mm') : '' }))
+                  }}
                   format="HH:mm"
                   allowClear={false}
+                  getPopupContainer={(trigger) => trigger?.parentElement || document.body}
                   suffixIcon={(
                     <span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1 }}>
                       schedule
@@ -315,9 +530,13 @@ function BookingModalInner({
                 </span>
                 <TimePicker
                   value={form.end_time ? dayjs(`2000-01-01T${form.end_time}`) : null}
-                  onChange={(d) => setForm((p) => ({ ...p, end_time: d ? dayjs(d).format('HH:mm') : '' }))}
+                  onChange={(d) => {
+                    setTouched((p) => ({ ...p, timeRange: true }))
+                    setForm((p) => ({ ...p, end_time: d ? dayjs(d).format('HH:mm') : '' }))
+                  }}
                   format="HH:mm"
                   allowClear={false}
+                  getPopupContainer={(trigger) => trigger?.parentElement || document.body}
                   suffixIcon={(
                     <span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1 }}>
                       schedule
@@ -327,6 +546,7 @@ function BookingModalInner({
                   style={{ width: '100%' }}
                 />
               </div>
+              {showError('timeRange') ? <div className="cv-fieldErrorText">{errors.timeRange}</div> : null}
             </div>
           </div>
 
@@ -335,14 +555,19 @@ function BookingModalInner({
               <div className="cv-fieldLabel">Tên khách hàng</div>
               <Input
                 value={form.customer_name}
-                onChange={onChange('customer_name')}
+                onChange={(e) => {
+                  setTouched((p) => ({ ...p, customer_name: true }))
+                  onChange('customer_name')(e)
+                }}
                 disabled={!canEdit || isBusy}
+                status={showError('customer_name') ? 'error' : ''}
                 prefix={(
                   <span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1 }}>
                     person
                   </span>
                 )}
               />
+              {showError('customer_name') ? <div className="cv-fieldErrorText">{errors.customer_name}</div> : null}
             </div>
           </div>
 
@@ -352,14 +577,19 @@ function BookingModalInner({
               <Input
                 inputMode="tel"
                 value={form.customer_phone}
-                onChange={onChange('customer_phone')}
+                onChange={(e) => {
+                  setTouched((p) => ({ ...p, customer_phone: true }))
+                  onChange('customer_phone')(e)
+                }}
                 disabled={!canEdit || isBusy}
+                status={showError('customer_phone') ? 'error' : ''}
                 prefix={(
                   <span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1 }}>
                     call
                   </span>
                 )}
               />
+              {showError('customer_phone') ? <div className="cv-fieldErrorText">{errors.customer_phone}</div> : null}
             </div>
           </div>
 
@@ -368,7 +598,10 @@ function BookingModalInner({
               <div className="cv-fieldLabel">Địa điểm</div>
               <Input
                 value={form.location}
-                onChange={onChange('location')}
+                onChange={(e) => {
+                  setTouched((p) => ({ ...p, location: true }))
+                  onChange('location')(e)
+                }}
                 disabled={!canEdit || isBusy}
                 prefix={(
                   <span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1 }}>
@@ -384,9 +617,13 @@ function BookingModalInner({
               <div className="cv-fieldLabel">Gói chụp</div>
               <Select
                 value={form.package_id || undefined}
-                onChange={handlePackageChange}
+                onChange={(value) => {
+                  setTouched((p) => ({ ...p, package_id: true }))
+                  handlePackageChange(value)
+                }}
                 options={(packageOptions || []).map((p) => ({ value: p.value, label: p.label }))}
                 disabled={!canEdit || isBusy || !packageOptions?.length}
+                status={showError('package_id') ? 'error' : ''}
                 suffixIcon={(
                   <span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1 }}>
                     expand_more
@@ -394,6 +631,57 @@ function BookingModalInner({
                 )}
                 style={{ width: '100%' }}
               />
+              {showError('package_id') ? <div className="cv-fieldErrorText">{errors.package_id}</div> : null}
+            </div>
+          </div>
+
+          <div className="cv-col-6">
+            <div className="cv-field">
+              <div className="cv-fieldLabel">Giá</div>
+              <InputNumber
+                value={form.price === null || form.price === undefined ? null : toInt(form.price)}
+                onChange={(v) => {
+                  setTouched((p) => ({ ...p, price: true }))
+                  setForm((p) => ({ ...p, price: v === null ? null : toInt(v) }))
+                }}
+                min={0}
+                max={CURRENCY_MAX}
+                controls={false}
+                formatter={formatWithCommas}
+                parser={parseCommas}
+                status={showError('price') ? 'error' : ''}
+                disabled={!canEdit || isBusy}
+                style={{ width: '100%' }}
+              />
+              {showError('price') ? <div className="cv-fieldErrorText">{errors.price}</div> : null}
+            </div>
+          </div>
+
+          <div className="cv-col-6">
+            <div className="cv-field">
+              <div className="cv-fieldLabel">Tiền cọc</div>
+              <InputNumber
+                value={form.deposit === null || form.deposit === undefined ? 0 : toInt(form.deposit)}
+                onChange={(v) => {
+                  setTouched((p) => ({ ...p, deposit: true }))
+                  setForm((p) => ({ ...p, deposit: v === null ? 0 : toInt(v) }))
+                }}
+                min={0}
+                max={(() => {
+                  const cap = Number.isFinite(toInt(form.price, NaN)) ? toInt(form.price, NaN) : CURRENCY_MAX
+                  return Math.min(CURRENCY_MAX, cap)
+                })()}
+                controls={false}
+                formatter={formatWithCommas}
+                parser={parseCommas}
+                status={showError('deposit') ? 'error' : ''}
+                disabled={!canEdit || isBusy || isPaidLike}
+                style={{ width: '100%' }}
+              />
+              {showError('deposit') ? <div className="cv-fieldErrorText">{errors.deposit}</div> : null}
+              {!canEdit ? (
+                <Typography.Text type="secondary">{formatVndOrDash(displayDeposit)}</Typography.Text>
+              ) : null}
             </div>
           </div>
 

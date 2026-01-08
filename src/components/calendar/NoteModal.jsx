@@ -1,6 +1,6 @@
 import dayjs from 'dayjs'
 import { Button, DatePicker, Input, Modal, Select, TimePicker, Typography } from 'antd'
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
 
 const timeStringToDayjs = (value) => {
@@ -35,6 +35,15 @@ export default function NoteModal({
   confirmLoading = false,
   readOnly = false
 }) {
+  const [submitAttempted, setSubmitAttempted] = useState(false)
+  const [touched, setTouched] = useState({})
+
+  useEffect(() => {
+    if (!open) return
+    setSubmitAttempted(false)
+    setTouched({})
+  }, [open])
+
   const title = note?.id ? 'Chi tiết note' : 'Tạo note'
   const okText = note?.id ? 'Lưu ghi chú' : 'Tạo ghi chú'
 
@@ -58,30 +67,40 @@ export default function NoteModal({
       Modal.confirm({
         title: 'Huỷ thay đổi?'
         , content: 'Bạn có thay đổi chưa lưu. Nếu huỷ, dữ liệu sẽ bị mất.'
+        , centered: true
         , icon: (
-          <span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1 }}>
+          <span className="material-symbols-rounded">
             warning
           </span>
         )
-        , okText: 'Huỷ'
+        , okText: 'Bỏ'
         , okButtonProps: { danger: true }
-        , cancelText: 'Tiếp tục chỉnh'
+        , cancelText: 'Tiếp tục'
         , onOk: () => resolve(true)
         , onCancel: () => resolve(false)
       })
     })
   }
 
-  const handleOk = async () => {
-    if (readOnly) return
-
+  const errors = useMemo(() => {
+    const out = {}
     const date = String(form?.date || '').trim()
     const time = String(form?.time || '').trim()
     const content = String(form?.content || '').trim()
 
-    if (!date) return toast.error('Vui lòng chọn ngày')
-    if (!time) return toast.error('Vui lòng chọn giờ')
-    if (!content) return toast.error('Vui lòng nhập nội dung note')
+    if (!date) out.date = 'Vui lòng chọn ngày'
+    if (!time) out.time = 'Vui lòng chọn giờ'
+    if (!content) out.content = 'Vui lòng nhập nội dung note'
+    return out
+  }, [form?.content, form?.date, form?.time])
+
+  const showError = (key) => Boolean((submitAttempted || touched?.[key]) && errors?.[key])
+
+  const handleOk = async () => {
+    if (readOnly) return
+
+    setSubmitAttempted(true)
+    if (Object.keys(errors || {}).length) return
 
     onOk?.()
   }
@@ -162,9 +181,13 @@ export default function NoteModal({
                   <div className="cv-timeSingleRow" style={{ marginTop: 0 }}>
                     <TimePicker
                       value={timeStringToDayjs(form?.time)}
-                      onChange={(d) => onChangeForm?.((p) => ({ ...p, time: dayjsToTimeString(d) }))}
+                      onChange={(d) => {
+                        setTouched((p) => ({ ...p, time: true }))
+                        onChangeForm?.((p) => ({ ...p, time: dayjsToTimeString(d) }))
+                      }}
                       format="HH:mm"
                       allowClear={false}
+                      getPopupContainer={(trigger) => trigger?.parentElement || document.body}
                       suffixIcon={(
                         <span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1 }}>
                           schedule
@@ -174,6 +197,7 @@ export default function NoteModal({
                       style={{ width: '100%' }}
                     />
                   </div>
+                  {showError('time') ? <div className="cv-fieldErrorText">{errors.time}</div> : null}
                 </div>
               </div>
             </div>
@@ -214,11 +238,16 @@ export default function NoteModal({
                   className="cv-textareaWithLeftIcon"
                   rows={4}
                   value={form?.content || ''}
-                  onChange={(e) => onChangeForm?.((p) => ({ ...p, content: e.target.value }))}
+                  onChange={(e) => {
+                    setTouched((p) => ({ ...p, content: true }))
+                    onChangeForm?.((p) => ({ ...p, content: e.target.value }))
+                  }}
                   placeholder="Nhập ghi chú…"
                   disabled={readOnly}
+                  status={showError('content') ? 'error' : ''}
                 />
               </div>
+              {showError('content') ? <div className="cv-fieldErrorText">{errors.content}</div> : null}
               <Typography.Text type="secondary">Note sẽ hiển thị trên lịch theo giờ đã chọn.</Typography.Text>
             </div>
           </div>

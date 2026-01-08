@@ -191,6 +191,14 @@
   margin-bottom: 6px;
 }
 
+.cv-calendarModal .cv-fieldErrorText {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--cv-danger);
+  line-height: 1.25;
+}
+
 .cv-calendarModal .cv-fieldLabelRow {
   display: flex;
   align-items: center;
@@ -349,4 +357,106 @@
   color: var(--cv-text-primary);
   -webkit-text-fill-color: var(--cv-text-primary);
   opacity: 0.9;
+}
+
+/* =============================
+   CONFIRM MODALS (AntD)
+   Applies to Modal.confirm/success/info/warning/error
+   Goal: centered layout + clear actions (like the reference).
+============================= */
+
+.ant-modal-confirm .ant-modal-content {
+  border-radius: var(--cv-radius-lg);
+  border: 1px solid var(--cv-border-default);
+  background: var(--cv-bg-main);
+  box-shadow: var(--cv-shadow-md);
+}
+
+.ant-modal-confirm .ant-modal-body {
+  padding: var(--cv-space-5);
+}
+
+.ant-modal-confirm .ant-modal-confirm-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* Custom icons (material symbols) used in confirm configs */
+.ant-modal-confirm .ant-modal-confirm-body .material-symbols-rounded {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 0 var(--cv-space-3) 0;
+  font-size: 44px;
+  line-height: 1;
+}
+
+.ant-modal-confirm.ant-modal-confirm-success .material-symbols-rounded {
+  color: var(--cv-success);
+}
+
+.ant-modal-confirm.ant-modal-confirm-info .material-symbols-rounded {
+  color: var(--cv-primary-500);
+}
+
+.ant-modal-confirm.ant-modal-confirm-warning .material-symbols-rounded,
+.ant-modal-confirm.ant-modal-confirm-error .material-symbols-rounded {
+  color: var(--cv-danger);
+}
+
+.ant-modal-confirm.ant-modal-confirm-warning .material-symbols-rounded {
+  color: var(--cv-warning);
+}
+
+.ant-modal-confirm.ant-modal-confirm-confirm .material-symbols-rounded {
+  color: var(--cv-primary-500);
+}
+
+/* Default icon wrapper (works for Ant icons; custom nodes won't break) */
+.ant-modal-confirm .ant-modal-confirm-body > .anticon {
+  margin: 0 0 var(--cv-space-3) 0;
+  font-size: 42px;
+  line-height: 1;
+}
+
+.ant-modal-confirm .ant-modal-confirm-title {
+  font-weight: 850;
+  color: var(--cv-text-primary);
+}
+
+.ant-modal-confirm .ant-modal-confirm-content {
+  margin-top: 6px;
+  color: var(--cv-text-secondary);
+}
+
+.ant-modal-confirm .ant-modal-confirm-btns {
+  float: none;
+  margin-top: var(--cv-space-4);
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.ant-modal-confirm .ant-modal-confirm-btns .ant-btn {
+  height: 44px;
+  border-radius: var(--cv-radius-md);
+  font-weight: 750;
+}
+
+.ant-modal-confirm .ant-modal-confirm-btns .ant-btn-primary {
+  box-shadow: none;
+}
+
+/* One-button variants (okCancel: false) */
+.ant-modal-confirm .ant-modal-confirm-btns .ant-btn:only-child {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 560px) {
+  .ant-modal-confirm .ant-modal-body {
+    padding: var(--cv-space-4);
+  }
 }

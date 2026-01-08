@@ -10,7 +10,7 @@ const toNumber = (value) => {
 
 const formatVndCompact = (value) => {
   const number = toNumber(value)
-  return `${new Intl.NumberFormat('vi-VN', { notation: 'compact', maximumFractionDigits: 0 }).format(number)} ₫`
+  return `${new Intl.NumberFormat('vi-VN', { notation: 'compact', maximumFractionDigits: 0 }).format(number)} VNĐ`
 }
 
 const cssVar = (name, fallback) => {
@@ -113,7 +113,7 @@ export default function MonthlyRevenueAreaChart({
         }
       },
       tooltip: {
-        y: { formatter: (v) => `${toNumber(v).toLocaleString('vi-VN')} đ` }
+        y: { formatter: (v) => `${toNumber(v).toLocaleString('vi-VN')} VNĐ` }
       },
       markers: {
         size: 0,

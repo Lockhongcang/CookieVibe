@@ -9,7 +9,7 @@ const toNumber = (value) => {
 
 const formatVnd = (value) => {
   const number = toNumber(value)
-  return `${new Intl.NumberFormat('vi-VN').format(number)} VND`
+  return `${new Intl.NumberFormat('vi-VN').format(number)} VNĐ`
 }
 
 export default function RevenueCards({ data, loading = false }) {

@@ -14,8 +14,18 @@
 
 .cv-dashboardHeader {
   display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 4px;
+  padding-top: var(--cv-space-2);
+}
+
+@media (max-width: 576px) {
+  .cv-dashboardHeader {
+    gap: 6px;
+    padding-top: 0;
+  }
 }
 
 .cv-dashboardHeader .ant-typography {
@@ -140,6 +150,12 @@
   height: 100%;
 }
 
+@media (max-width: 768px) {
+  .cv-kpiCard.ant-card {
+    aspect-ratio: 1 / 1;
+  }
+}
+
 /*
   Height consistency:
   - Inner layout is 3 zones (head / mid / foot)
@@ -148,9 +164,9 @@
 .cv-kpiInner {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
   height: 100%;
-  gap: var(--cv-space-2);
+  gap: var(--cv-space-3);
 }
 
 .cv-kpiHead {
@@ -160,13 +176,15 @@
 
 .cv-kpiMid {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  min-width: 0;
 }
 
 .cv-kpiFoot {
   min-height: var(--cv-space-4);
   display: flex;
   align-items: flex-end;
+  margin-top: auto;
 }
 
 .cv-kpiTopRow {
@@ -201,7 +219,7 @@
 
 /* Main KPI (brand highlight): subtle primary gradient (ONLY here). */
 .cv-kpiCard--primary.cv-dashboardCard.ant-card {
-  background: linear-gradient(135deg, var(--cv-primary-700), var(--cv-primary-500));
+  background: linear-gradient(135deg, var(--cv-primary-700), var(--cv-primary-300));
 }
 
 .cv-kpiCard--primary .cv-kpiTitle,
@@ -227,13 +245,18 @@
 }
 
 .cv-kpiValue {
-  font-size: var(--cv-font-size-lg);
+  font-size: clamp(14px, 2.2vw, 18px);
   font-weight: 700;
   color: var(--cv-text-primary);
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .cv-kpiValue--primary {
-  font-size: var(--cv-title-kpi);
+  font-size: clamp(18px, 2.8vw, 30px);
 }
 
 .cv-kpiCaption {

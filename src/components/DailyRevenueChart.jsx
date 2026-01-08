@@ -9,8 +9,8 @@ const toNumber = (value) => {
 
 const formatVndCompact = (value) => {
   const number = toNumber(value)
-  // Compact isn't always ideal for VND; keep readable but shorter.
-  return `${new Intl.NumberFormat('vi-VN', { notation: 'compact' }).format(number)} ₫`
+  // Compact isn't always ideal for VNĐ; keep readable but shorter.
+  return `${new Intl.NumberFormat('vi-VN', { notation: 'compact' }).format(number)} VNĐ`
 }
 
 /**

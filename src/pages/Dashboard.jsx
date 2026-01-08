@@ -86,6 +86,10 @@ export default function DashboardPage() {
 	return (
 		<div className="cv-container">
 			<Space direction="vertical" size={18} className="cv-dashboard">
+				<div className="cv-dashboardHeader">
+					<Title level={2} style={{ margin: 0, fontWeight: '700' }}>Chào bạn, Cookier!</Title>
+					<Text type="secondary">Đây là tổng quan doanh thu và lịch chụp của bạn.</Text>
+				</div>
 
 				{/* Layout: 2 columns (8-4). Typography-led, white cards, minimal decoration. */}
 				<section className="cv-dashboardGrid">
@@ -129,7 +133,7 @@ export default function DashboardPage() {
 										tableLayout="fixed"
 										className="cv-dashboardRecentTable"
 										locale={{
-											emptyText: loading
+										emptyText: loading
 												? 'Đang tải…'
 												: (
 													<div className="cv-emptyState cv-emptyState--compact">
@@ -164,7 +168,7 @@ export default function DashboardPage() {
 											))}
 										</div>
 									) : (
-										loading ? (
+									loading ? (
 											<div className="cv-recentEmpty">Đang tải…</div>
 										) : (
 											<div className="cv-emptyState cv-emptyState--compact">
