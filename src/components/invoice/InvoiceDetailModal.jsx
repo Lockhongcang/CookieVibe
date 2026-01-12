@@ -5,6 +5,7 @@ import { toast } from 'react-toastify'
 import { getBookingById } from '../../services/booking.service'
 import { getInvoiceByBookingId, updateInvoice } from '../../services/invoice.service'
 import { toNumber } from '../../utils/number.js'
+import QuickNoteSuggestions from '../ui/QuickNoteSuggestions'
 
 const { Text } = Typography
 
@@ -531,6 +532,11 @@ export default function InvoiceDetailModal({ open, bookingId, onClose, onSaved }
               rows={3}
               value={form.note}
               onChange={(e) => setForm((p) => ({ ...p, note: e.target.value }))}
+              disabled={loading}
+            />
+            <QuickNoteSuggestions
+              value={form.note}
+              onChange={(next) => setForm((p) => ({ ...p, note: next }))}
               disabled={loading}
             />
           </div>

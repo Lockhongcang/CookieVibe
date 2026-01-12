@@ -5,6 +5,7 @@ import { toast } from 'react-toastify'
 import { toNumber } from '../../utils/number.js'
 import { updateBooking } from '../../services/booking.service'
 import { createInvoice, getInvoiceByBookingId, updateInvoice } from '../../services/invoice.service'
+import QuickNoteSuggestions from '../ui/QuickNoteSuggestions'
 
 const DEFAULT_DURATION_MINUTES = 60
 
@@ -714,6 +715,11 @@ function BookingModalInner({
                   disabled={!canEdit || isBusy}
                 />
               </div>
+              <QuickNoteSuggestions
+                value={form.note}
+                onChange={(next) => setForm((p) => ({ ...p, note: next }))}
+                disabled={!canEdit || isBusy}
+              />
             </div>
           </div>
         </div>

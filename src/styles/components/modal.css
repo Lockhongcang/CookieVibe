@@ -310,6 +310,37 @@
   padding-left: 42px;
 }
 
+/* Quick note suggestions (booking/invoice note) */
+.cv-calendarModal .cv-quickNoteSuggestionsWrap {
+  margin-top: 8px;
+}
+
+.cv-calendarModal .cv-quickNoteSuggestionsLabel {
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--cv-text-secondary);
+  margin-bottom: 6px;
+}
+
+.cv-calendarModal .cv-quickNoteSuggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cv-calendarModal .cv-quickNoteBtn.ant-btn {
+  border-radius: var(--cv-radius-pill);
+  background: var(--cv-bg-soft);
+  border: 1px solid var(--cv-border-soft);
+  color: var(--cv-text-secondary);
+  height: 28px;
+  padding: 0 10px;
+}
+
+.cv-calendarModal .cv-quickNoteBtn.ant-btn:hover {
+  color: var(--cv-text-primary);
+}
+
 /* =============================
    DISABLED INPUTS – PREMIUM LOOK
 ============================= */
