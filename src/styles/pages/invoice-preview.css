@@ -17,7 +17,7 @@
 .cv-invoicePreviewViewport {
   width: 100%;
   max-width: calc(100vw - 24px);
-  max-height: min(53vh, 860px);
+  max-height: min(90vh, 860px);
   overflow: auto;
   padding: 12px;
   display: flex;
@@ -118,5 +118,12 @@
     width: 210mm;
     height: 297mm;
     box-shadow: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .cv-invoicePreviewViewport {
+    max-width: calc(100vw - 24px);
+    max-height: min(55vh, 860px);
   }
 }
