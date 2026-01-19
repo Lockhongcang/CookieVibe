@@ -1,6 +1,6 @@
 import dayjs from 'dayjs'
 import { useEffect, useMemo, useState } from 'react'
-import { Button, DatePicker, Input, InputNumber, Modal, Select, TimePicker, Typography } from 'antd'
+import { AutoComplete, Button, DatePicker, Input, InputNumber, Modal, Select, TimePicker, Typography } from 'antd'
 import { toast } from 'react-toastify'
 import { toNumber } from '../../utils/number.js'
 import { updateBooking } from '../../services/booking.service'
@@ -11,6 +11,13 @@ const DEFAULT_DURATION_MINUTES = 60
 
 const CURRENCY_MIN = 1000
 const CURRENCY_MAX = 10000000
+
+const LOCATION_SUGGESTIONS = [
+  'Bến Ninh Kiều',
+  'Lăng Thủ Khoa',
+  'Chùa Nam Nhã',
+  'Thiền Viện Trúc Lâm'
+]
 
 const toInt = (value, fallback = 0) => {
   const n = toNumber(value, fallback)
@@ -113,11 +120,12 @@ function BookingModalInner({
   const isBusy = saving || confirmLoading
   const canEdit = Boolean(booking) && !isCompleted && !isCancelled
 
-  const [initialSnapshot] = useState(() => {
+  const initialSnapshot = useMemo(() => {
     const start = booking?.start_datetime ? dayjs(booking.start_datetime) : null
     const end = booking?.end_datetime ? dayjs(booking.end_datetime) : null
     const safeStart = start && start.isValid() ? start : dayjs()
     const safeEnd = end && end.isValid() ? end : safeStart.add(DEFAULT_DURATION_MINUTES, 'minute')
+
     return {
       customer_name: booking?.customer_name ?? '',
       customer_phone: booking?.customer_phone ?? '',
@@ -131,15 +139,66 @@ function BookingModalInner({
       price: invoice?.total_amount ?? booking?.packages?.price ?? null,
       deposit: invoice?.deposit ?? 0
     }
-  })
+  }, [
+    booking?.customer_name,
+    booking?.customer_phone,
+    booking?.location,
+    booking?.package_id,
+    booking?.people_count,
+    booking?.note,
+    booking?.packages?.price,
+    booking?.start_datetime,
+    booking?.end_datetime,
+    invoice?.total_amount,
+    invoice?.deposit
+  ])
 
-  const [form, setForm] = useState(initialSnapshot)
+  const [form, setForm] = useState(() => initialSnapshot)
+
+  const locationAutoOptions = useMemo(() => {
+    const q = String(form.location || '').trim().toLowerCase()
+    const list = q
+      ? LOCATION_SUGGESTIONS.filter((s) => s.toLowerCase().includes(q))
+      : LOCATION_SUGGESTIONS
+    return list.map((value) => ({ value }))
+  }, [form.location])
 
   useEffect(() => {
     if (!open) return
     setSubmitAttempted(false)
     setTouched({})
   }, [open])
+
+  useEffect(() => {
+    if (!open) return
+
+    // Keep the form in sync with refreshed invoice data *without* remounting the modal.
+    // Only auto-sync price/deposit if user hasn't touched those fields.
+    setForm((prev) => {
+      const next = { ...prev }
+      let changed = false
+
+      if (!touched?.price) {
+        const prevPrice = prev.price === null || prev.price === undefined ? null : toInt(prev.price)
+        const nextPrice = initialSnapshot.price === null || initialSnapshot.price === undefined ? null : toInt(initialSnapshot.price)
+        if (prevPrice !== nextPrice) {
+          next.price = initialSnapshot.price
+          changed = true
+        }
+      }
+
+      if (!touched?.deposit) {
+        const prevDeposit = prev.deposit === null || prev.deposit === undefined ? 0 : toInt(prev.deposit)
+        const nextDeposit = initialSnapshot.deposit === null || initialSnapshot.deposit === undefined ? 0 : toInt(initialSnapshot.deposit)
+        if (prevDeposit !== nextDeposit) {
+          next.deposit = initialSnapshot.deposit
+          changed = true
+        }
+      }
+
+      return changed ? next : prev
+    })
+  }, [open, initialSnapshot.price, initialSnapshot.deposit, touched?.price, touched?.deposit])
 
   const isDirty = useMemo(() => {
     const baseline = {
@@ -258,20 +317,6 @@ function BookingModalInner({
     return `${n.toLocaleString('vi-VN')} VNĐ`
   }
 
-  const displayPrice = useMemo(() => {
-    // Prefer invoice total (if any), otherwise use package price.
-    const invTotal = invoice?.total_amount
-    if (invTotal !== null && invTotal !== undefined) return invTotal
-
-    const pkgPrice = selectedPackage?.price
-    if (pkgPrice !== null && pkgPrice !== undefined) return pkgPrice
-
-    const joinedPkgPrice = booking?.packages?.price
-    if (joinedPkgPrice !== null && joinedPkgPrice !== undefined) return joinedPkgPrice
-
-    return null
-  }, [invoice?.total_amount, selectedPackage?.price, booking?.packages?.price])
-
   const displayDeposit = useMemo(() => {
     return invoice?.deposit ?? null
   }, [invoice?.deposit])
@@ -295,14 +340,12 @@ function BookingModalInner({
     }
 
     // Try to update trigger-created invoice (or existing), otherwise create.
-    let lastErr = null
     for (let i = 0; i < 2; i++) {
       // eslint-disable-next-line no-await-in-loop
       const { data: inv, error: invErr } = await getInvoiceByBookingId(bookingId)
       if (!invErr && inv?.id) {
         return await updateInvoice(inv.id, payload)
       }
-      lastErr = invErr
       // eslint-disable-next-line no-await-in-loop
       await new Promise((r) => setTimeout(r, 250))
     }
@@ -577,6 +620,8 @@ function BookingModalInner({
               <div className="cv-fieldLabel">Số điện thoại</div>
               <Input
                 inputMode="tel"
+                type="tel"
+                autoComplete="tel"
                 value={form.customer_phone}
                 onChange={(e) => {
                   setTouched((p) => ({ ...p, customer_phone: true }))
@@ -597,19 +642,25 @@ function BookingModalInner({
           <div className="cv-col-6">
             <div className="cv-field">
               <div className="cv-fieldLabel">Địa điểm</div>
-              <Input
+              <AutoComplete
                 value={form.location}
-                onChange={(e) => {
+                options={locationAutoOptions}
+                onChange={(value) => {
                   setTouched((p) => ({ ...p, location: true }))
-                  onChange('location')(e)
+                  setForm((p) => ({ ...p, location: value }))
                 }}
+                filterOption={false}
                 disabled={!canEdit || isBusy}
-                prefix={(
-                  <span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1 }}>
-                    location_on
-                  </span>
-                )}
-              />
+              >
+                <Input
+                  disabled={!canEdit || isBusy}
+                  prefix={(
+                    <span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1 }}>
+                      location_on
+                    </span>
+                  )}
+                />
+              </AutoComplete>
             </div>
           </div>
 

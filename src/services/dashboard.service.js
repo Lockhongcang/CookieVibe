@@ -252,7 +252,6 @@ export const getDashboardOverview = async (month, year, revenueOptions = {}) => 
 
   const now = new Date()
   const todayIso = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`
-  const todayStart = `${todayIso}T00:00:00`
   const todayEnd = `${todayIso}T23:59:59.999`
 
   // Week ranges (current 7 days vs previous 7 days) by created_at/start_datetime.

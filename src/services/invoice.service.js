@@ -50,6 +50,7 @@ export const getInvoices = async () => {
   return await supabase
     .from(TABLE)
     .select(INVOICE_LIST_SELECT)
+    .neq('status', 'canceled')
     .order('created_at', { ascending: false })
 }
 
@@ -62,7 +63,7 @@ export const getInvoicesByBookingIds = async (bookingIds) => {
 
   return await supabase
     .from(TABLE)
-    .select('booking_id, makeup_fee')
+    .select('booking_id, makeup_fee, deposit, status')
     .in('booking_id', ids)
 }
 

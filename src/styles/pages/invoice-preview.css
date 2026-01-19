@@ -1,0 +1,122 @@
+.invoice-preview {
+  /* True A4 page size */
+  width: 210mm;
+  height: 297mm;
+  box-sizing: border-box;
+  padding: 60mm 44mm;
+  font-family: Inter, system-ui, sans-serif;
+  color: var(--cv-text-primary, #2a1f16);
+
+  background-image: url('../../assets/InvoiceBG.svg');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 100%;
+}
+
+/* Modal viewport: keep layout identical, scale down responsively */
+.cv-invoicePreviewViewport {
+  width: 100%;
+  max-width: calc(100vw - 24px);
+  max-height: min(53vh, 860px);
+  overflow: auto;
+  padding: 12px;
+  display: flex;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.cv-invoicePreviewScaled {
+  /* The inner element is scaled via inline transform */
+  transform-origin: top center;
+}
+
+.cv-invoicePreviewCapture {
+  position: fixed;
+  left: -100000px;
+  top: 0;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+/* Shared label/value */
+.invoice-label {
+  font-size: 0.95rem;
+  font-weight: 400;
+  color: var(--cv-primary-900);
+}
+
+.invoice-value {
+  margin-top: 4px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--cv-primary-900);
+}
+
+.invoice-value--strong {
+  font-weight: 800;
+}
+
+.invoice-value--light {
+  font-weight: 400;
+  color: var(--cv-text-secondary, #6f6256);
+}
+
+.invoice-field {
+  min-width: 0;
+}
+
+/* Row 1: 2 columns */
+.invoice-grid2 {
+  margin-top: 26px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+/* Row 2 */
+.invoice-row2 {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.invoice-row2Left {
+  display: grid;
+  gap: 10px;
+}
+
+.invoice-row2Right {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+}
+
+/* Dashed divider */
+.invoice-divider {
+  margin: 18px 0;
+  border-top: 1px dashed rgba(0, 0, 0, 0.18);
+}
+
+/* Rows 3-6 (between) */
+.invoice-rowBetween {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.invoice-rowBetween--emphasis .invoice-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--cv-primary-500);
+}
+
+@media print {
+  .invoice-preview {
+    width: 210mm;
+    height: 297mm;
+    box-shadow: none;
+  }
+}

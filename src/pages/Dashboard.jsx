@@ -6,6 +6,7 @@ import { getDashboardOverview } from '../services/dashboard.service'
 import DashboardKpiCards from '../components/dashboard/DashboardKpiCards'
 import MonthlyRevenueAreaChart from '../components/dashboard/MonthlyRevenueAreaChart'
 import TopPackagesDonutChart from '../components/dashboard/TopPackagesDonutChart'
+import { ShimmerDashboardLayout } from '../components/ui/Shimmer'
 import '../styles/pages/dashboard.css'
 
 const { Title, Text } = Typography
@@ -93,6 +94,10 @@ export default function DashboardPage() {
 
 				{/* Layout: 2 columns (8-4). Typography-led, white cards, minimal decoration. */}
 				<section className="cv-dashboardGrid">
+					{loading && !overview ? (
+						<ShimmerDashboardLayout />
+					) : (
+					<>
 					<div className="cv-dashboardCol cv-dashboardCol--main">
 						{/* Left / Row 1: KPI block (2x2) */}
 						<section className="cv-dashboardSection">
@@ -184,6 +189,9 @@ export default function DashboardPage() {
 							</Card>
 						</section>
 					</div>
+					</>
+					)
+					}
 				</section>
 			</Space>
 		</div>

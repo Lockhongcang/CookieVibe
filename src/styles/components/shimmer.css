@@ -1,0 +1,79 @@
+/*
+  CookieVibe shimmer skeleton
+  - Use for loading states across pages (cards, rows, blocks)
+*/
+
+@keyframes cv-shimmer {
+  0% {
+    background-position: -900px 0;
+  }
+  100% {
+    background-position: 900px 0;
+  }
+}
+
+.cv-shimmer {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.06) 0%,
+    rgba(0, 0, 0, 0.09) 35%,
+    rgba(0, 0, 0, 0.06) 70%
+  );
+  background-size: 900px 100%;
+  animation: cv-shimmer 1.2s ease-in-out infinite;
+}
+
+.cv-shimmerCard {
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--cv-border-soft);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.04);
+  padding: 16px;
+}
+
+.cv-shimmerStack {
+  display: grid;
+  gap: 12px;
+}
+
+.cv-shimmerRow {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.cv-shimmerCircle {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+}
+
+.cv-shimmerH1 {
+  height: 18px;
+  border-radius: 10px;
+}
+
+.cv-shimmerText {
+  height: 12px;
+  border-radius: 10px;
+}
+
+.cv-shimmerBtn {
+  height: 34px;
+  border-radius: 999px;
+}
+
+.cv-shimmerGrid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 768px) {
+  .cv-shimmerGrid2 {
+    grid-template-columns: 1fr;
+  }
+}

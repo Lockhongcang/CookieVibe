@@ -7,6 +7,7 @@ import dayjs from 'dayjs'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Button, Modal } from 'antd'
 import { toast } from 'react-toastify'
+import { ShimmerCard } from '../components/ui/Shimmer'
 import CreateBookingModal from '../components/calendar/CreateBookingModal'
 import BookingModal from '../components/calendar/BookingModal'
 import NoteModal from '../components/calendar/NoteModal'
@@ -21,7 +22,7 @@ import '../styles/pages/calendar.css'
 
 const NOTE_STATUSES = new Set(['todo', 'completed'])
 
-const DAY_BOOKING_LIMIT = 2
+const DAY_BOOKING_LIMIT = 3
 const DAY_NOTE_LIMIT = 1
 
 const formatWeekdayHeader = (date) => {
@@ -35,6 +36,8 @@ export default function CalendarPage({ onOpenInvoice, autoOpenBookingId, onAutoO
   const [bookings, setBookings] = useState([])
   const [notes, setNotes] = useState([])
   const [packages, setPackages] = useState([])
+
+  const [loadingBookings, setLoadingBookings] = useState(true)
 
   const [invoicesByBookingId, setInvoicesByBookingId] = useState({})
 
@@ -60,6 +63,7 @@ export default function CalendarPage({ onOpenInvoice, autoOpenBookingId, onAutoO
 
   const calendarRef = useRef(null)
   const calendarWrapRef = useRef(null)
+  const lastRefreshAtRef = useRef(0)
   // Responsive behavior:
   // - >= 1800px: show event chips + right panel
   // - 1200-1799px: show event dots + right panel
@@ -252,55 +256,16 @@ export default function CalendarPage({ onOpenInvoice, autoOpenBookingId, onAutoO
   }, [])
 
   const events = useMemo(() => {
-    // Booking display rule:
-    // - Active bookings (non-canceled) always show.
-    // - Canceled bookings are only shown if there is remaining capacity in the day.
-    //   (e.g. limit=2, if 2 active => show 0 canceled; if 1 active => show 1 canceled).
-    const list = Array.isArray(bookings) ? bookings : []
-    const byDay = new Map()
-    const withoutDay = []
-
-    for (const b of list) {
-      const startIso = b?.start_datetime
-      const key = startIso ? dayjs(startIso).format('YYYY-MM-DD') : ''
-      if (!key) {
-        withoutDay.push(b)
-        continue
-      }
-      if (!byDay.has(key)) byDay.set(key, [])
-      byDay.get(key).push(b)
-    }
-
-    const filteredBookings = []
-    for (const [, dayList] of byDay.entries()) {
-      const active = []
-      const canceled = []
-      for (const b of dayList) {
-        const rawStatus = String(b?.status || 'scheduled')
-        if (rawStatus === 'canceled') canceled.push(b)
-        else active.push(b)
-      }
-
-      const sortByStart = (a, b) => {
+    // UI requirement: canceled bookings are never shown.
+    const list = (Array.isArray(bookings) ? bookings : [])
+      .filter((b) => String(b?.status || 'scheduled') !== 'canceled')
+      .sort((a, b) => {
         const av = a?.start_datetime ? dayjs(a.start_datetime).valueOf() : 0
         const bv = b?.start_datetime ? dayjs(b.start_datetime).valueOf() : 0
         return av - bv
-      }
-      active.sort(sortByStart)
-      canceled.sort(sortByStart)
+      })
 
-      const remainingSlots = Math.max(0, DAY_BOOKING_LIMIT - active.length)
-      filteredBookings.push(...active, ...canceled.slice(0, remainingSlots))
-    }
-
-    filteredBookings.push(...withoutDay)
-    filteredBookings.sort((a, b) => {
-      const av = a?.start_datetime ? dayjs(a.start_datetime).valueOf() : 0
-      const bv = b?.start_datetime ? dayjs(b.start_datetime).valueOf() : 0
-      return av - bv
-    })
-
-    const bookingEvents = filteredBookings.map(mapBookingToEvent)
+    const bookingEvents = list.map(mapBookingToEvent)
     const noteEvents = (notes || []).map(mapNoteToEvent)
     return [...bookingEvents, ...noteEvents]
   }, [bookings, notes, mapBookingToEvent, mapNoteToEvent])
@@ -332,7 +297,9 @@ export default function CalendarPage({ onOpenInvoice, autoOpenBookingId, onAutoO
   }, [])
 
   const fetchBookings = useCallback(async () => {
+    setLoadingBookings(true)
     const { data, error } = await getBookings()
+    setLoadingBookings(false)
     if (error) {
       console.error(error)
       toast.error(error.message || 'Không tải được danh sách booking')
@@ -342,6 +309,7 @@ export default function CalendarPage({ onOpenInvoice, autoOpenBookingId, onAutoO
     const normalized = data || []
     setBookings(normalized)
     await fetchInvoicesForBookings(normalized)
+    return normalized
   }, [fetchInvoicesForBookings])
 
   const fetchNotesForRange = useCallback(async (from, toExclusive) => {
@@ -377,12 +345,17 @@ export default function CalendarPage({ onOpenInvoice, autoOpenBookingId, onAutoO
 
   useEffect(() => {
     // If booking status changes in another page/tab (e.g., Invoice), refresh when user returns.
-    const onFocus = () => {
+    const safeRefresh = () => {
+      const now = Date.now()
+      if (now - lastRefreshAtRef.current < 400) return
+      lastRefreshAtRef.current = now
       fetchBookings()
     }
 
+    const onFocus = () => safeRefresh()
+
     const onVisibilityChange = () => {
-      if (document.visibilityState === 'visible') fetchBookings()
+      if (document.visibilityState === 'visible') safeRefresh()
     }
 
     window.addEventListener('focus', onFocus)
@@ -419,13 +392,25 @@ export default function CalendarPage({ onOpenInvoice, autoOpenBookingId, onAutoO
     setModalOpen(true)
   }, [])
 
+  const handleCreatedBooking = useCallback(async (createdBooking) => {
+    const list = await fetchBookings()
+    const createdId = createdBooking?.id
+    if (!createdId) return
+    const found = (Array.isArray(list) ? list : []).find((b) => b?.id === createdId) || null
+    if (found) openBooking(found)
+  }, [fetchBookings, openBooking])
+
   useEffect(() => {
     if (!autoOpenBookingId) return
     const list = Array.isArray(bookings) ? bookings : []
     const found = list.find((b) => b?.id === autoOpenBookingId) || null
     if (!found) return
-    openBooking(found)
-    onAutoOpenConsumed?.()
+    const t = setTimeout(() => {
+      openBooking(found)
+      onAutoOpenConsumed?.()
+    }, 0)
+
+    return () => clearTimeout(t)
   }, [autoOpenBookingId, bookings, onAutoOpenConsumed, openBooking])
 
   const handleEventClick = (info) => {
@@ -531,6 +516,8 @@ export default function CalendarPage({ onOpenInvoice, autoOpenBookingId, onAutoO
         .filter((b) => {
           const start = b?.start_datetime
           if (!start) return false
+          const rawStatus = String(b?.status || 'scheduled')
+          if (rawStatus === 'canceled') return false
           return dayjs(start).format('YYYY-MM-DD') === key
         })
         .map((b) => ({
@@ -933,96 +920,102 @@ export default function CalendarPage({ onOpenInvoice, autoOpenBookingId, onAutoO
           <div className="cv-calendarSplit">
             <div className="cv-calendarMain">
               <div className="cv-calendarPage" ref={calendarWrapRef}>
-                <FullCalendar
-                  ref={calendarRef}
-                  plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-                  initialView="dayGridMonth"
-                  locale={viLocale}
-                  headerToolbar={
-                    isPhone
-                      ? { left: 'title', center: 'prev,next', right: '' }
-                      : { left: 'title prev,next', right: 'today dayGridMonth,timeGridWeek' }
-                  }
-                  buttonText={{
-                    today: 'Hôm nay',
-                    month: 'Tháng',
-                    week: 'Tuần'
-                  }}
-                  dayHeaderContent={(arg) => {
-                    if (arg?.view?.type !== 'timeGridWeek') return arg.text
-                    const day = arg?.date ? dayjs(arg.date).format('D') : ''
-                    const top = formatWeekdayHeader(arg?.date)
-                    const isToday = arg?.date ? dayjs(arg.date).isSame(dayjs(), 'day') : false
-                    const circleClass = isToday ? 'cv-weekDayCircle cv-weekDayCircle--today' : 'cv-weekDayCircle'
-                    return {
-                      html: `
-                        <div class="cv-weekDayHeader">
-                          <div class="cv-weekDayHeaderTop">${top}</div>
-                          <div class="${circleClass}">${day}</div>
-                        </div>
-                      `
+                {loadingBookings && !bookings?.length ? (
+                  <div style={{ padding: 12 }}>
+                    <ShimmerCard titleWidth="38%" rows={12} />
+                  </div>
+                ) : (
+                  <FullCalendar
+                    ref={calendarRef}
+                    plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                    initialView="dayGridMonth"
+                    locale={viLocale}
+                    headerToolbar={
+                      isPhone
+                        ? { left: 'title', center: 'prev,next', right: '' }
+                        : { left: 'title prev,next', right: 'today dayGridMonth,timeGridWeek' }
                     }
-                  }}
-                  dayCellClassNames={(arg) => {
-                    const key = toDayKey(arg?.date)
-                    const out = []
+                    buttonText={{
+                      today: 'Hôm nay',
+                      month: 'Tháng',
+                      week: 'Tuần'
+                    }}
+                    dayHeaderContent={(arg) => {
+                      if (arg?.view?.type !== 'timeGridWeek') return arg.text
+                      const day = arg?.date ? dayjs(arg.date).format('D') : ''
+                      const top = formatWeekdayHeader(arg?.date)
+                      const isToday = arg?.date ? dayjs(arg.date).isSame(dayjs(), 'day') : false
+                      const circleClass = isToday ? 'cv-weekDayCircle cv-weekDayCircle--today' : 'cv-weekDayCircle'
+                      return {
+                        html: `
+                          <div class="cv-weekDayHeader">
+                            <div class="cv-weekDayHeaderTop">${top}</div>
+                            <div class="${circleClass}">${day}</div>
+                          </div>
+                        `
+                      }
+                    }}
+                    dayCellClassNames={(arg) => {
+                      const key = toDayKey(arg?.date)
+                      const out = []
 
-                    if (key && selectedDayKey && key === selectedDayKey) out.push('cv-day--selected')
+                      if (key && selectedDayKey && key === selectedDayKey) out.push('cv-day--selected')
 
-                    return out
-                  }}
-                  dayCellContent={dayCellContent}
-                  dateClick={handleDateClick}
-                  selectable={false}
-                  selectMirror
-                  select={handleSelect}
-                  events={events}
-                  eventClick={(info) => {
-                    const d = info?.event?.start
-                    if (d) {
-                      setSelectedDayKey(toDayKey(d))
-                      setSelectedItemId(String(info?.event?.id || '') || null)
-                    }
-                    handleEventClick(info)
-                  }}
-                  eventClassNames={eventClassNames}
-                  eventContent={renderEventContent}
-                  datesSet={handleDatesSet}
-                  eventAllow={(dropInfo, draggedEvent) => {
-                    const type = draggedEvent?.extendedProps?.type
-                    if (type === 'note') return false
-                    if (type !== 'booking') return false
+                      return out
+                    }}
+                    dayCellContent={dayCellContent}
+                    dateClick={handleDateClick}
+                    selectable={false}
+                    selectMirror
+                    select={handleSelect}
+                    events={events}
+                    eventClick={(info) => {
+                      const d = info?.event?.start
+                      if (d) {
+                        setSelectedDayKey(toDayKey(d))
+                        setSelectedItemId(String(info?.event?.id || '') || null)
+                      }
+                      handleEventClick(info)
+                    }}
+                    eventClassNames={eventClassNames}
+                    eventContent={renderEventContent}
+                    datesSet={handleDatesSet}
+                    eventAllow={(dropInfo, draggedEvent) => {
+                      const type = draggedEvent?.extendedProps?.type
+                      if (type === 'note') return false
+                      if (type !== 'booking') return false
 
-                    const status = String(draggedEvent?.extendedProps?.raw?.status || 'scheduled')
-                    if (status === 'completed' || status === 'canceled') return false
-                    return true
-                  }}
-                  editable
-                  eventDrop={handleEventDrop}
-                  eventResize={handleEventResize}
-                  eventResizableFromStart
-                  height="auto"
-                  eventDisplay="block"
-                  dayMaxEvents={3}
-                  allDaySlot={currentViewType === 'timeGridWeek' || currentViewType === 'timeGridDay'}
-                  slotMinTime="06:00:00"
-                  slotMaxTime="18:00:00"
-                  slotEventOverlap={currentViewType === 'timeGridWeek'}
-                  views={{
-                    dayGridMonth: { editable: false, selectable: false },
-                    timeGridWeek: { editable: true, selectable: true }
-                  }}
-                  eventOrder={(a, b) => {
-                    const order = { booking: 1, note: 2 }
-                    return (order[a.extendedProps.type] || 9)
-                      - (order[b.extendedProps.type] || 9)
-                  }}
-                  eventTimeFormat={{
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: false
-                  }}
-                />
+                      const status = String(draggedEvent?.extendedProps?.raw?.status || 'scheduled')
+                      if (status === 'completed' || status === 'canceled') return false
+                      return true
+                    }}
+                    editable
+                    eventDrop={handleEventDrop}
+                    eventResize={handleEventResize}
+                    eventResizableFromStart
+                    height="auto"
+                    eventDisplay="block"
+                    dayMaxEvents={3}
+                    allDaySlot={currentViewType === 'timeGridWeek' || currentViewType === 'timeGridDay'}
+                    slotMinTime="06:00:00"
+                    slotMaxTime="18:00:00"
+                    slotEventOverlap={currentViewType === 'timeGridWeek'}
+                    views={{
+                      dayGridMonth: { editable: false, selectable: false },
+                      timeGridWeek: { editable: true, selectable: true }
+                    }}
+                    eventOrder={(a, b) => {
+                      const order = { booking: 1, note: 2 }
+                      return (order[a.extendedProps.type] || 9)
+                        - (order[b.extendedProps.type] || 9)
+                    }}
+                    eventTimeFormat={{
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: false
+                    }}
+                  />
+                )}
               </div>
             </div>
 
@@ -1407,7 +1400,7 @@ export default function CalendarPage({ onOpenInvoice, autoOpenBookingId, onAutoO
         existingBookings={bookings}
         packageOptions={packageOptions}
         onClose={() => setCreateOpen(false)}
-        onCreated={fetchBookings}
+        onCreated={handleCreatedBooking}
       />
 
       <NoteModal

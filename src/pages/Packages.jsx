@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
 import { toNumber } from '../utils/number.js'
 import { createPackage, getPackages, updatePackage } from '../services/package.service'
+import { ShimmerTableCard } from '../components/ui/Shimmer'
 import '../styles/pages/packages.css'
 
 const CURRENCY_MIN = 1000
@@ -414,61 +415,65 @@ function PackagesPage() {
 
   return (
     <div className="cv-container">
-      <Card
-        title={
-          <Space align="center" style={{ width: '100%', justifyContent: 'space-between' }} wrap>
-            <Typography.Title level={4} style={{ margin: 0 }}>Quản lí gói chụp</Typography.Title>
-            <Space size={8} wrap>
-              <Button
-                size="middle"
-                shape="circle"
-                onClick={fetchPackages}
-                loading={loading}
-                aria-label="Tải lại"
-                icon={<span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1, display: 'block' }}>refresh</span>}
-              />
-              <Button
-                type="primary"
-                size="middle"
-                shape="circle"
-                onClick={openCreate}
-                aria-label="Thêm gói"
-                icon={<span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1, display: 'block' }}>add</span>}
-              />
+      {loading && !rows?.length ? (
+        <ShimmerTableCard rows={8} />
+      ) : (
+        <Card
+          title={
+            <Space align="center" style={{ width: '100%', justifyContent: 'space-between' }} wrap>
+              <Typography.Title level={4} style={{ margin: 0 }}>Quản lí gói chụp</Typography.Title>
+              <Space size={8} wrap>
+                <Button
+                  size="middle"
+                  shape="circle"
+                  onClick={fetchPackages}
+                  loading={loading}
+                  aria-label="Tải lại"
+                  icon={<span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1, display: 'block' }}>refresh</span>}
+                />
+                <Button
+                  type="primary"
+                  size="middle"
+                  shape="circle"
+                  onClick={openCreate}
+                  aria-label="Thêm gói"
+                  icon={<span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1, display: 'block' }}>add</span>}
+                />
+              </Space>
             </Space>
-          </Space>
-        }
-      >
-        <Table
-          rowKey={(r) => r.id}
-          loading={loading}
-          columns={isMobile ? mobileColumns : columns}
-          dataSource={rows}
-          pagination={false}
-          showHeader={!isMobile}
-          scroll={isMobile ? undefined : { x: 'max-content' }}
-          locale={{
-            emptyText: loading
-              ? 'Đang tải…'
-              : (
-                  <div className="cv-emptyState cv-emptyState--compact">
-                    <span className="material-symbols-rounded cv-emptyStateIcon" aria-hidden>
-                      inventory_2
-                    </span>
-                    <div className="cv-emptyStateTitle">Chưa có gói chụp</div>
-                    <div className="cv-emptyStateHint">Bạn có thể bấm nút “+” để thêm gói chụp mới.</div>
-                  </div>
-                )
-          }}
-          onRow={
-            isMobile
-              ? (record) => ({
-                  onClick: () => openEdit(record)
-                })
-              : undefined
           }
-        />
-      </Card>
+        >
+          <Table
+            rowKey={(r) => r.id}
+            loading={loading}
+            columns={isMobile ? mobileColumns : columns}
+            dataSource={rows}
+            pagination={false}
+            showHeader={!isMobile}
+            scroll={isMobile ? undefined : { x: 'max-content' }}
+            locale={{
+              emptyText: loading
+                ? 'Đang tải…'
+                : (
+                    <div className="cv-emptyState cv-emptyState--compact">
+                      <span className="material-symbols-rounded cv-emptyStateIcon" aria-hidden>
+                        inventory_2
+                      </span>
+                      <div className="cv-emptyStateTitle">Chưa có gói chụp</div>
+                      <div className="cv-emptyStateHint">Bạn có thể bấm nút “+” để thêm gói chụp mới.</div>
+                    </div>
+                  )
+            }}
+            onRow={
+              isMobile
+                ? (record) => ({
+                    onClick: () => openEdit(record)
+                  })
+                : undefined
+            }
+          />
+        </Card>
+      )}
 
       <Modal
         open={modalOpen}

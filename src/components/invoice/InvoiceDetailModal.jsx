@@ -6,6 +6,8 @@ import { getBookingById } from '../../services/booking.service'
 import { getInvoiceByBookingId, updateInvoice } from '../../services/invoice.service'
 import { toNumber } from '../../utils/number.js'
 import QuickNoteSuggestions from '../ui/QuickNoteSuggestions'
+import InvoiceExportModal from './InvoiceExportModal'
+
 
 const { Text } = Typography
 
@@ -80,6 +82,8 @@ const computeTotalInvoice = ({
 export default function InvoiceDetailModal({ open, bookingId, onClose, onSaved }) {
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
+
+  const [previewOpen, setPreviewOpen] = useState(false)
 
   const [booking, setBooking] = useState(null)
   const [invoice, setInvoice] = useState(null)
@@ -326,9 +330,14 @@ export default function InvoiceDetailModal({ open, bookingId, onClose, onSaved }
             <Button onClick={handleCancel} disabled={saving} block>
               Huỷ
             </Button>
-            <Button type="primary" onClick={handleSave} loading={saving} disabled={loading || !booking} block>
-              Lưu hoá đơn
+            <Button onClick={() => setPreviewOpen(true)} block>
+              Xuất hoá đơn
             </Button>
+            <div className="cv-modalFooterFull">
+              <Button type="primary" onClick={handleSave} loading={saving} disabled={loading || !booking} block>
+                Lưu hoá đơn
+              </Button>
+            </div>
           </div>
         </div>
       }
@@ -542,6 +551,15 @@ export default function InvoiceDetailModal({ open, bookingId, onClose, onSaved }
           </div>
         </div>
       </div>
+      <InvoiceExportModal
+        open={previewOpen}
+        booking={booking}
+        invoice={{
+          ...invoice,
+          total_amount: computedTotalAmount
+        }}
+        onClose={() => setPreviewOpen(false)}
+      />
     </Modal>
   )
 }

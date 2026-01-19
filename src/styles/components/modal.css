@@ -134,6 +134,10 @@
   grid-column: span 6;
 }
 
+.cv-calendarModal .cv-modalFooterGrid .cv-modalFooterFull {
+  grid-column: span 12;
+}
+
 .cv-calendarModal .cv-modalGrid12 {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));

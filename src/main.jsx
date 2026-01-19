@@ -9,6 +9,7 @@ import 'react-toastify/dist/ReactToastify.css'
 import './index.css'
 import './styles/components/modal.css'
 import './styles/overrides/antd-inputs.css'
+import './styles/components/shimmer.css'
 import App from './App.jsx'
 
 dayjs.locale('vi')

@@ -1,6 +1,6 @@
 import dayjs from 'dayjs'
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { Button, DatePicker, Input, InputNumber, Modal, Select, Switch, TimePicker } from 'antd'
+import { useMemo, useRef, useState } from 'react'
+import { AutoComplete, Button, DatePicker, Input, InputNumber, Modal, Select, Switch, TimePicker } from 'antd'
 import { toast } from 'react-toastify'
 import { toNumber } from '../../utils/number.js'
 import { createBooking } from '../../services/booking.service'
@@ -10,16 +10,22 @@ import QuickNoteSuggestions from '../ui/QuickNoteSuggestions'
 const DEFAULT_DURATION_MINUTES = 60
 const INITIAL_DEFAULT_DURATION_MINUTES = 120
 
-const DAY_BOOKING_LIMIT = 2
+const DAY_SHOOTING_LIMIT = 2
+const DAY_LESSON_LIMIT = 1
+const DAY_BOOKING_LIMIT = DAY_SHOOTING_LIMIT + DAY_LESSON_LIMIT
+
+const LESSON_PACKAGE_NAME = 'Cookie khác'
+const LESSON_DEFAULT_LOCATION = 'Đại học FPT'
+
+const LOCATION_SUGGESTIONS = [
+  'Bến Ninh Kiều',
+  'Lăng Thủ Khoa',
+  'Chùa Nam Nhã',
+  'Thiền Viện Trúc Lâm'
+]
 
 const CURRENCY_MIN = 1000
 const CURRENCY_MAX = 10000000
-
-const isValidVnPhone = (value) => {
-  if (!value) return true
-  const normalized = String(value).trim().replace(/[\s.-]/g, '')
-  return /^(?:\+?84|0)\d{9,10}$/.test(normalized)
-}
 
 const normalizeToVnPhone10 = (value) => {
   const digits = String(value || '').replace(/\D/g, '')
@@ -82,6 +88,14 @@ const getInitialFormFromRange = (defaultRange) => {
   }
 }
 
+const isLessonBookingRow = (bookingRow) => {
+  const note = String(bookingRow?.note || '')
+  if (/\[HỌC/i.test(note)) return true
+  const pkgName = String(bookingRow?.packages?.name || '')
+  if (pkgName.trim() === LESSON_PACKAGE_NAME) return true
+  return false
+}
+
 export default function CreateBookingModal(props) {
   const start = props?.defaultRange?.start ?? props?.defaultRange?.time ?? props?.defaultRange?.date
   const end = props?.defaultRange?.end ?? null
@@ -100,13 +114,14 @@ function CreateBookingModalInner({
 }) {
   const [creating, setCreating] = useState(false)
   const [form, setForm] = useState(() => getInitialFormFromRange(defaultRange))
-
-  const initialFormRef = useRef(getInitialFormFromRange(defaultRange))
+  const initialForm = useMemo(() => getInitialFormFromRange(defaultRange), [defaultRange])
 
   const [priceTouched, setPriceTouched] = useState(false)
 
   const [submitAttempted, setSubmitAttempted] = useState(false)
   const [touched, setTouched] = useState({})
+
+  const [eventType, setEventType] = useState('shooting') // shooting | lesson
 
   const [allDay, setAllDay] = useState(false)
   const lastTimeRangeRef = useRef({ start_time: form.start_time, end_time: form.end_time })
@@ -119,18 +134,19 @@ function CreateBookingModalInner({
   }
 
   const handlePackageChange = (value) => {
+    if (eventType === 'lesson') return
     setForm((p) => ({ ...p, package_id: value }))
   }
 
-  const selectedPackage = (packageOptions || []).find((p) => p?.value === form.package_id) || null
-  const showPeopleCount = selectedPackage?.label === 'Cookie Nhiều mình'
+  const cookieKhacPackageId = useMemo(() => {
+    const list = Array.isArray(packageOptions) ? packageOptions : []
+    const found = list.find((p) => String(p?.label || '').trim() === LESSON_PACKAGE_NAME)
+    return found?.value ?? null
+  }, [packageOptions])
 
-  const formatVndOrDash = (value) => {
-    if (value === null || value === undefined || value === '') return '--'
-    const n = toNumber(value, NaN)
-    if (!Number.isFinite(n)) return '--'
-    return `${n.toLocaleString('vi-VN')} VNĐ`
-  }
+  const resolvedPackageId = eventType === 'lesson' ? cookieKhacPackageId : form.package_id
+  const selectedPackage = (packageOptions || []).find((p) => p?.value === resolvedPackageId) || null
+  const showPeopleCount = selectedPackage?.label === 'Cookie Nhiều mình'
 
   const toInt = (value, fallback = 0) => {
     const n = toNumber(value, fallback)
@@ -150,33 +166,10 @@ function CreateBookingModalInner({
     return selectedPackage?.price ?? null
   }, [form.people_count, selectedPackage?.price, showPeopleCount])
 
-  useEffect(() => {
-    // When user selects/changing package (or people count for special package), default price updates
-    // unless user has manually overridden it.
-    if (priceTouched) return
-    setForm((p) => ({ ...p, price: computedDefaultPrice }))
-  }, [computedDefaultPrice, priceTouched])
-
-  useEffect(() => {
-    // Reset price override when modal is reopened with a new key.
-    if (!open) return
-    setPriceTouched(false)
-  }, [open])
-
-  useEffect(() => {
-    if (!open) return
-    // Snapshot baseline so we can detect whether user actually changed anything.
-    initialFormRef.current = getInitialFormFromRange(defaultRange)
-  }, [open, defaultRange])
-
-  useEffect(() => {
-    if (!open) return
-    setSubmitAttempted(false)
-    setTouched({})
-  }, [open, defaultRange])
+  const effectivePrice = priceTouched ? form.price : computedDefaultPrice
 
   const isDirty = useMemo(() => {
-    const base = initialFormRef.current || {}
+    const base = initialForm || {}
     const baseline = {
       customer_name: String(base.customer_name || '').trim(),
       customer_phone: String(base.customer_phone || '').trim(),
@@ -208,11 +201,11 @@ function CreateBookingModalInner({
     }
 
     return JSON.stringify(baseline) !== JSON.stringify(current)
-  }, [allDay, form])
+  }, [allDay, form, initialForm])
 
-  function hasConflict() {
-    const start = dayjs(`${form.start_date}T${form.start_time}`)
-    const end = dayjs(`${form.start_date}T${form.end_time}`)
+  const conflictMsg = useMemo(() => {
+    const start = dayjs(`${form.start_date}T${form.start_time}`).second(0).millisecond(0)
+    const end = dayjs(`${form.start_date}T${form.end_time}`).second(0).millisecond(0)
 
     if (!start.isValid() || !end?.isValid()) return 'Vui lòng nhập ngày/giờ hợp lệ'
     if (!end.isAfter(start)) return 'Giờ kết thúc phải sau giờ bắt đầu'
@@ -221,9 +214,9 @@ function CreateBookingModalInner({
       if (!b) return false
       if (b.status === 'canceled') return false
 
-      const otherStart = b.start_datetime ? dayjs(b.start_datetime) : null
+      const otherStart = b.start_datetime ? dayjs(b.start_datetime).second(0).millisecond(0) : null
       const otherEnd = b.end_datetime
-        ? dayjs(b.end_datetime)
+        ? dayjs(b.end_datetime).second(0).millisecond(0)
         : otherStart && otherStart.isValid()
           ? otherStart.add(DEFAULT_DURATION_MINUTES, 'minute')
           : null
@@ -234,7 +227,7 @@ function CreateBookingModalInner({
 
     if (overlap) return 'Trùng lịch: thời gian này đã có ca chụp'
     return null
-  }
+  }, [existingBookings, form.end_time, form.start_date, form.start_time])
 
   const errors = useMemo(() => {
     const out = {}
@@ -242,23 +235,35 @@ function CreateBookingModalInner({
     // Day limit: max N bookings per day (exclude canceled)
     const dayKey = String(form.start_date || '').trim()
     if (dayKey) {
-      const count = (existingBookings || []).filter((b) => {
+      const sameDay = (existingBookings || []).filter((b) => {
         if (!b) return false
         const rawStatus = String(b?.status || 'scheduled')
         if (rawStatus === 'canceled') return false
         const key = b?.start_datetime ? dayjs(b.start_datetime).format('YYYY-MM-DD') : ''
         return key === dayKey
-      }).length
+      })
 
-      if (count >= DAY_BOOKING_LIMIT) {
-        out.conflict = `Ngày này đã đủ ${DAY_BOOKING_LIMIT} lịch chụp`
+      const shootingCount = sameDay.filter((b) => !isLessonBookingRow(b)).length
+      const lessonCount = sameDay.filter((b) => isLessonBookingRow(b)).length
+      const totalCount = sameDay.length
+
+      if (eventType === 'lesson' && lessonCount >= DAY_LESSON_LIMIT) {
+        out.conflict = `Ngày này đã đủ ${DAY_LESSON_LIMIT} lịch học`
+      } else if (eventType === 'shooting' && shootingCount >= DAY_SHOOTING_LIMIT) {
+        out.conflict = `Ngày này đã đủ ${DAY_SHOOTING_LIMIT} lịch chụp`
+      } else if (totalCount >= DAY_BOOKING_LIMIT) {
+        out.conflict = `Ngày này đã đủ ${DAY_BOOKING_LIMIT} lịch`
       }
     }
 
     const name = String(form.customer_name || '').trim()
-    if (!name) out.customer_name = 'Vui lòng nhập tên khách hàng'
+    if (!name) out.customer_name = eventType === 'lesson' ? 'Vui lòng chọn Online/Offline' : 'Vui lòng nhập tên khách hàng'
 
-    if (!form.package_id) out.package_id = 'Vui lòng chọn gói chụp'
+    if (eventType === 'lesson') {
+      if (!cookieKhacPackageId) out.package_id = `Chưa có gói "${LESSON_PACKAGE_NAME}" (vui lòng tạo trong mục Packages)`
+    } else if (!form.package_id) {
+      out.package_id = 'Vui lòng chọn gói chụp'
+    }
 
     const phone = String(form.customer_phone || '').trim()
     if (phone && !isValidVnPhone10Digits(phone)) out.customer_phone = 'Số điện thoại phải đủ 10 số'
@@ -270,12 +275,12 @@ function CreateBookingModalInner({
 
     const shouldValidateInvoice = Boolean(
       form.package_id
-      || (form.price !== null && form.price !== undefined && String(form.price) !== '')
+      || (effectivePrice !== null && effectivePrice !== undefined && String(effectivePrice) !== '')
       || toInt(form.deposit, 0) > 0
     )
 
     if (shouldValidateInvoice) {
-      const totalAmount = toInt(form.price, NaN)
+      const totalAmount = toInt(effectivePrice, NaN)
       const deposit = toInt(form.deposit, 0)
       if (Number.isFinite(totalAmount)) {
         if (totalAmount > 0 && totalAmount < CURRENCY_MIN) out.price = `Giá phải = 0 hoặc ≥ ${CURRENCY_MIN.toLocaleString('vi-VN')}`
@@ -288,11 +293,18 @@ function CreateBookingModalInner({
       else if (Number.isFinite(totalAmount) && deposit > totalAmount) out.deposit = 'Tiền cọc không được lớn hơn giá'
     }
 
-    const conflictMsg = hasConflict()
     if (!out.conflict && conflictMsg) out.conflict = conflictMsg
 
     return out
-  }, [form, existingBookings])
+  }, [form, existingBookings, eventType, cookieKhacPackageId, conflictMsg, effectivePrice])
+
+  const locationAutoOptions = useMemo(() => {
+    const q = String(form.location || '').trim().toLowerCase()
+    const list = q
+      ? LOCATION_SUGGESTIONS.filter((s) => s.toLowerCase().includes(q))
+      : LOCATION_SUGGESTIONS
+    return list.map((value) => ({ value }))
+  }, [form.location])
 
   const showError = (key) => Boolean((submitAttempted || touched?.[key]) && errors?.[key])
 
@@ -300,12 +312,15 @@ function CreateBookingModalInner({
     const bookingId = bookingRow?.id
     if (!bookingId) return { error: { message: 'Thiếu booking_id' } }
 
-    const totalAmount = toInt(form.price, 0)
+    const totalAmount = toInt(effectivePrice, 0)
     const deposit = toInt(form.deposit, 0)
+
+    const resolvedPackageId = eventType === 'lesson' ? cookieKhacPackageId : form.package_id
+    if (!resolvedPackageId) return { error: { message: 'Thiếu package_id' } }
 
     const payload = {
       booking_id: bookingId,
-      package_id: form.package_id,
+      package_id: resolvedPackageId,
       base_price: totalAmount,
       total_amount: totalAmount,
       deposit
@@ -314,14 +329,12 @@ function CreateBookingModalInner({
     // Try to update trigger-created invoice (with short retries), otherwise create.
     let lastErr = null
     for (let i = 0; i < 3; i++) {
-      // eslint-disable-next-line no-await-in-loop
       const { data: inv, error: invErr } = await getInvoiceByBookingId(bookingId)
       if (!invErr && inv?.id) {
         return await updateInvoice(inv.id, payload)
       }
       lastErr = invErr
 
-      // eslint-disable-next-line no-await-in-loop
       await new Promise((r) => setTimeout(r, 300))
     }
 
@@ -382,8 +395,10 @@ function CreateBookingModalInner({
       if (!start.isValid() || !end.isValid()) return
       if (!end.isAfter(start)) return
 
-      const conflictMsg = hasConflict()
       if (conflictMsg) return
+
+      const finalPackageId = eventType === 'lesson' ? cookieKhacPackageId : form.package_id
+      if (!finalPackageId) return
 
       const payload = {
         customer_name: form.customer_name.trim(),
@@ -391,7 +406,7 @@ function CreateBookingModalInner({
         location: String(form.location || '').trim(),
         start_datetime: start.toISOString(),
         end_datetime: end.toISOString(),
-        package_id: form.package_id,
+        package_id: finalPackageId,
         people_count: showPeopleCount ? Math.max(1, toNumber(form.people_count)) : 1,
         note: String(form.note || '')
       }
@@ -409,8 +424,9 @@ function CreateBookingModalInner({
       }
 
       // Auto-create/update invoice with user-entered price & deposit (when enough data is present).
-      const totalAmount = toInt(form.price, NaN)
-      const canUpsertInvoice = Boolean(form.package_id) && Number.isFinite(totalAmount) && totalAmount > 0
+      const totalAmount = toInt(effectivePrice, NaN)
+      const deposit = toInt(form.deposit, 0)
+      const canUpsertInvoice = Boolean(finalPackageId) && ((Number.isFinite(totalAmount) && totalAmount > 0) || deposit > 0)
       if (canUpsertInvoice) {
         const { error: invErr } = await upsertInvoiceForBooking(createdBooking)
         if (invErr) {
@@ -420,7 +436,7 @@ function CreateBookingModalInner({
       }
 
       toast.success('Tạo booking thành công')
-      await onCreated?.()
+      await onCreated?.(createdBooking)
       onClose?.()
     } catch (err) {
       setCreating(false)
@@ -474,6 +490,40 @@ function CreateBookingModalInner({
       }
     >
       <div className="cv-modalGrid12">
+
+        <div className="cv-col-6">
+          <div className="cv-field">
+            <div className="cv-fieldLabel">Loại lịch</div>
+            <Select
+              value={eventType}
+              onChange={(value) => {
+                setEventType(value)
+                setTouched((p) => ({ ...p, eventType: true }))
+                if (value === 'lesson') {
+                  setForm((p) => ({
+                    ...p,
+                    package_id: cookieKhacPackageId ?? p.package_id,
+                    location: String(p.location || '').trim() ? p.location : LESSON_DEFAULT_LOCATION,
+                    customer_name: p.customer_name ? p.customer_name : 'Offline'
+                  }))
+                }
+              }}
+              options={[
+                { value: 'shooting', label: 'Lịch chụp' },
+                { value: 'lesson', label: 'Học' }
+              ]}
+              suffixIcon={(
+                <span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1 }}>
+                  expand_more
+                </span>
+              )}
+              style={{ width: '100%' }}
+            />
+          </div>
+        </div>
+
+        <div className="cv-col-6" />
+
         <div className="cv-col-12">
           <div className="cv-dateTimeBlock">
             <div className="cv-dateTimeHeader">
@@ -564,20 +614,46 @@ function CreateBookingModalInner({
         <div className="cv-col-6">
           <div className="cv-field">
             <div className="cv-fieldLabel">Tên khách hàng</div>
-            <Input
-              value={form.customer_name}
-              onChange={(e) => {
-                setTouched((p) => ({ ...p, customer_name: true }))
-                onChange('customer_name')(e)
-              }}
-              placeholder="Nhập tên khách…"
-              status={showError('customer_name') ? 'error' : ''}
-              prefix={(
-                <span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1 }}>
-                  person
-                </span>
-              )}
-            />
+            {eventType === 'lesson' ? (
+              <Select
+                value={form.customer_name || undefined}
+                onChange={(value) => {
+                  setTouched((p) => ({ ...p, customer_name: true }))
+                  setForm((p) => ({
+                    ...p,
+                    customer_name: value,
+                    location: value === 'Online' ? 'Online' : LESSON_DEFAULT_LOCATION
+                  }))
+                }}
+                options={[
+                  { value: 'Offline', label: 'Offline' },
+                  { value: 'Online', label: 'Online' }
+                ]}
+                placeholder="Chọn Online/Offline"
+                status={showError('customer_name') ? 'error' : ''}
+                suffixIcon={(
+                  <span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1 }}>
+                    expand_more
+                  </span>
+                )}
+                style={{ width: '100%' }}
+              />
+            ) : (
+              <Input
+                value={form.customer_name}
+                onChange={(e) => {
+                  setTouched((p) => ({ ...p, customer_name: true }))
+                  onChange('customer_name')(e)
+                }}
+                placeholder="Nhập tên khách…"
+                status={showError('customer_name') ? 'error' : ''}
+                prefix={(
+                  <span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1 }}>
+                    person
+                  </span>
+                )}
+              />
+            )}
             {showError('customer_name') ? <div className="cv-fieldErrorText">{errors.customer_name}</div> : null}
           </div>
         </div>
@@ -587,6 +663,8 @@ function CreateBookingModalInner({
             <div className="cv-fieldLabel">Số điện thoại</div>
             <Input
               inputMode="tel"
+              type="tel"
+              autoComplete="tel"
               value={form.customer_phone}
               onChange={(e) => {
                 setTouched((p) => ({ ...p, customer_phone: true }))
@@ -607,20 +685,25 @@ function CreateBookingModalInner({
         <div className="cv-col-6">
           <div className="cv-field">
             <div className="cv-fieldLabel">Địa điểm</div>
-            <Input
+            <AutoComplete
               value={form.location}
-              onChange={(e) => {
+              options={locationAutoOptions}
+              onChange={(value) => {
                 setTouched((p) => ({ ...p, location: true }))
-                onChange('location')(e)
+                setForm((p) => ({ ...p, location: value }))
               }}
-              placeholder="Nhập địa chỉ…"
-              status={showError('location') ? 'error' : ''}
-              prefix={(
-                <span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1 }}>
-                  location_on
-                </span>
-              )}
-            />
+              filterOption={false}
+            >
+              <Input
+                placeholder="Nhập địa chỉ…"
+                status={showError('location') ? 'error' : ''}
+                prefix={(
+                  <span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1 }}>
+                    location_on
+                  </span>
+                )}
+              />
+            </AutoComplete>
             {showError('location') ? <div className="cv-fieldErrorText">{errors.location}</div> : null}
           </div>
         </div>
@@ -629,14 +712,14 @@ function CreateBookingModalInner({
           <div className="cv-field">
             <div className="cv-fieldLabel">Gói chụp</div>
             <Select
-              value={form.package_id || undefined}
+              value={resolvedPackageId || undefined}
               onChange={(value) => {
                 setTouched((p) => ({ ...p, package_id: true }))
                 handlePackageChange(value)
               }}
               options={(packageOptions || []).map((p) => ({ value: p.value, label: p.label }))}
               placeholder={packageOptions?.length ? 'Chọn gói' : 'Chưa có danh sách gói'}
-              disabled={!packageOptions?.length}
+              disabled={!packageOptions?.length || eventType === 'lesson'}
               status={showError('package_id') ? 'error' : ''}
               suffixIcon={(
                 <span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1 }}>
@@ -653,7 +736,7 @@ function CreateBookingModalInner({
           <div className="cv-field">
             <div className="cv-fieldLabel">Giá</div>
             <InputNumber
-              value={form.price === null || form.price === undefined ? null : toInt(form.price)}
+              value={effectivePrice === null || effectivePrice === undefined ? null : toInt(effectivePrice)}
               onChange={(v) => {
                 setPriceTouched(true)
                 setTouched((p) => ({ ...p, price: true }))
@@ -692,7 +775,7 @@ function CreateBookingModalInner({
               }}
               min={0}
               max={(() => {
-                const priceCap = form.price !== null && form.price !== undefined ? toInt(form.price) : CURRENCY_MAX
+                const priceCap = effectivePrice !== null && effectivePrice !== undefined ? toInt(effectivePrice) : CURRENCY_MAX
                 return Math.min(CURRENCY_MAX, priceCap)
               })()}
               controls={false}
