@@ -651,6 +651,7 @@ function BookingModalInner({
                 }}
                 filterOption={false}
                 disabled={!canEdit || isBusy}
+                style={{ width: '100%' }}
               >
                 <Input
                   disabled={!canEdit || isBusy}

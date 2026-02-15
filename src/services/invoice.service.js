@@ -63,7 +63,7 @@ export const getInvoicesByBookingIds = async (bookingIds) => {
 
   return await supabase
     .from(TABLE)
-    .select('booking_id, makeup_fee, deposit, status')
+    .select('booking_id, makeup_fee, deposit, total_amount, status')
     .in('booking_id', ids)
 }
 

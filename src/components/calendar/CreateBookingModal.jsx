@@ -154,6 +154,13 @@ function CreateBookingModalInner({
     return Math.round(n)
   }
 
+  const toCurrencyIntOrNull = (value) => {
+    if (value === null || value === undefined || value === '') return null
+    const n = toNumber(value, NaN)
+    if (!Number.isFinite(n)) return null
+    return Math.round(n)
+  }
+
   const computeCookieNhieuMinhBasePrice = (peopleCount) => {
     const count = Math.max(1, toNumber(peopleCount))
     if (count === 3 || count === 4) return count * 400000
@@ -693,6 +700,7 @@ function CreateBookingModalInner({
                 setForm((p) => ({ ...p, location: value }))
               }}
               filterOption={false}
+              style={{ width: '100%' }}
             >
               <Input
                 placeholder="Nhập địa chỉ…"
@@ -736,11 +744,12 @@ function CreateBookingModalInner({
           <div className="cv-field">
             <div className="cv-fieldLabel">Giá</div>
             <InputNumber
-              value={effectivePrice === null || effectivePrice === undefined ? null : toInt(effectivePrice)}
+              value={toCurrencyIntOrNull(effectivePrice)}
               onChange={(v) => {
-                setPriceTouched(true)
+                const nextPrice = toCurrencyIntOrNull(v)
+                setPriceTouched(nextPrice !== null)
                 setTouched((p) => ({ ...p, price: true }))
-                setForm((p) => ({ ...p, price: v === null ? null : toInt(v) }))
+                setForm((p) => ({ ...p, price: nextPrice }))
               }}
               min={0}
               max={CURRENCY_MAX}
